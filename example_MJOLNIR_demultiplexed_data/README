@@ -1,0 +1,44 @@
+Tutorial MJOLNIR using demultiplexed raw data - BATS
+
+In this example, we will run MJOLNIR with a set of fastq files, each containing an individual sample (already demultiplexed by Illumina using library tags).
+
+For this tutorial you will need the following files:
+
+1. RAW SEQUENCING DATA
+
+We have ten paired-end fastq files for ten bats poop samples, taken after the Great Annual Transylvania Party Dinner. 
+Those files have been already demultiplexed by the Illumina sequencer. The file names can have whatever format. But they must have a common format for the R1 and R2 motifs (e.g. "_R1." and "_R2.".
+
+- Bartok_R1.fastq & Bartok_R2.fastq
+- Von_Count_R1.fastq & Von_Count_R2.fastq
+- Duckula_R1.fastq & Duckula_R2.fastq
+- Anishinabe_R1.fastq & Anishinabe_R2.fastq
+- Camazotz_R1.fastq & Camazotz_R2.fastq
+- Chocula_R1.fastq & Chocula_R2.fastq
+- Orlok_R1.fastq & Orlok_R2.fastq
+- Vampirella_R1.fastq & Vampirella_R2.fastq
+- Whiskers_R1.fastq & Whiskers_R2.fastq
+- Barnabas_R1.fastq & Barnabas_R2.fastq
+
+2. THE METADATA FILE
+
+When we have demultiplexed sample files, we do not need to use a ngsfilter table file (as we do for multiplexed Metafast libraries). But we need to provide the sample information in the metadata file. We have to create a column called "fastq_name_R1" with the names of the R1 fastq files for each sample, along with their "mjolnir_agnomens" and "original_samples" columns.
+The metadata is a TSV file (using tab separators("\t") as separator character. It must contain at least the mentioned three columns. Note that you need to provide agnomens with the format LIBX_sample_XXX, where LIBX must match the lib attribute given to the MJOLNIR R functions.
+RAGNAROC will also use this information to recover the original names from the "original_samples" column for the final dataset.
+The rest of the metadata columns are optional. You can include any metadata describing your set of sample. 
+
+3. TAXONOMIC INFORMATION
+
+In addition, for the taxonomic assignment step using THOR, we will need a directory containing all the taxonomic information needed. You will need:
+- A reference database for your metabarcoding fragment in fasta format.
+- A taxonomy database in ecoPCR-db format.
+- The three tables needed for assignment of higher ranks: order_complete.csv, family_to_order.csv, and genus_to_family.csv.
+See our DUFA repositories here: https://github.com/uit-metabarcoding/DUFA/tree/master/DUFA_COLR for more information.
+
+4. THE MJOLNIR PIPELINE
+
+This is an R script file, called mjolnir_BATS.R in our example.
+
+The main difference with the multiplexed library is that you do not need to call RAN. You can start directly with FREYJA, using the option "demultiplexed=TRUE". 
+FREYJA will look for the fastq R1 names in the LIBX_metadata.csv file.
+The information for the R1 and R2 motifs and the sequences of the primers need to be passed as options to FREYJA. The Leray-XT primer sequences do not need to be passed, since they are the default option. 

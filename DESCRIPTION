@@ -1,0 +1,19 @@
+Package: mjolnir
+Type: Package
+Title: MJOLNIR Metabarcoding Joining Obitools & Linkage Networks In R
+Version: 3.0.0
+Author: Owen S. Wangensteen & Adrià Antich
+Maintainer: Owen S. Wangensteen <owenwangensteen@gmail.com> & Adrià Antich <adriantich@gmail.com> 
+Description: MJOLNIR Metabarcoding Joining Obitools & Linkage Networks In R
+    A pipeline for processing metabarcoding data including:
+    - Quality filtering with OBItools3
+    - Chimaera removal with uchime_denovo
+    - Denoising with DnoisE
+    - MOTU clustering with swarm
+    - Taxonomic assignment with ecotag
+    - Pseudogene removal with LULU.
+License: GPL-3
+Depends: parallel,lulu,Biostrings
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
