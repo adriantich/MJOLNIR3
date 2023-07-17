@@ -47,9 +47,9 @@ MJOLNIR3 depends on the following dependencies, which must be installed in the s
   
       # with conda previously installed
       # Create conda enviroment
-      conda create -n mjolnir python=3.9
+      conda create -n mjolnir3 python=3.9
       # to activate the environment tipe
-      conda activate mjolnir
+      conda activate mjolnir3
   
 - [venv](https://docs.python.org/3/library/venv.html) (sudo required to install it) 
 
@@ -60,7 +60,7 @@ MJOLNIR3 depends on the following dependencies, which must be installed in the s
 * It is recommended to download the repository, so constant updates will be occurring for the first versions and updates are easier that way. Then install all the required software within the MJOLNIR3 folder.
 
         # activate the conda environment or your prefered one
-        conda activate mjolnir
+        conda activate mjolnir3
         # clone MJOLNIR3 repository
         git clone https://github.com/metabarpark/MJOLNIR3.git
         cd MJOLNIR3
