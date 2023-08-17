@@ -87,6 +87,11 @@
 #' quality filter fasta files for each sample that can 
 #' be used for other experiment without previous run of RAN, FREYJA and HELA.
 #' 
+#' @param run_dnoise Logical. In the case of the algorithm='DnoisE_SWARM' there is
+#' the option of not running the DnoisE if it has been already run for a previous
+#' experiment. The HELA_nonchimeras.fasta is needed anyway to have the information
+#' of the number of sequences that will be used by RAGNAROC for the final summary. 
+#' 
 #' @param obipath Character string specifying the PATH to the obi binary.
 #' 
 #' @param python_packages  Character string specifying the PATH to where the 
@@ -136,7 +141,7 @@
 
 
 mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=5,entropy=c(0.47,0.23,1.02,313),#entropy=F/c("auto_sample",313)/c("auto_dataset")
-                          algorithm="DnoisE_SWARM",obipath="",python_packages="", swarmpath=NULL, dnoise_path=NULL, 
+                          algorithm="DnoisE_SWARM",run_dnoise=T,obipath="",python_packages="", swarmpath=NULL, dnoise_path=NULL, 
                           remove_singletons = TRUE,remove_DMS=T){
   #####
   # 0: define variables
@@ -184,15 +189,16 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
                           num_seqs=value))
       },mc.cores = cores)
     }
-    if(entropy[1]=="auto_dataset") {
-      system(paste0("cat *_HELA_nonchimeras.fasta >file_for_entropy.fasta ; ",
-                    dnoise," --fasta_input file_for_entropy.fasta -g"),intern = T, wait = T)
-      entropies  <- read.csv("file_for_entropy.fasta_entropy_values.csv")
-      entropy <- c(entropies[1,4:6],entropies[1,1])
-    }
-    for (file in sample_list) {
-      seq_counts <- before_1_ODIN$num_seqs[before_1_ODIN$file==paste0(file,"_HELA_nonchimeras.fasta")]
-      if (seq_counts==1) {
+    if(run_dnoise | algorithm=="dnoise") {
+      if(entropy[1]=="auto_dataset") {
+        system(paste0("cat *_HELA_nonchimeras.fasta >file_for_entropy.fasta ; ",
+                      dnoise," --fasta_input file_for_entropy.fasta -g"),intern = T, wait = T)
+        entropies  <- read.csv("file_for_entropy.fasta_entropy_values.csv")
+        entropy <- c(entropies[1,4:6],entropies[1,1])
+      }
+      for (file in sample_list) {
+        seq_counts <- before_1_ODIN$num_seqs[before_1_ODIN$file==paste0(file,"_HELA_nonchimeras.fasta")]
+        if (seq_counts==1) {
           if (run_entropy) {
             system(paste0("cp ",file,"_HELA_nonchimeras.fasta ",file,"_ODIN_Adcorr_denoised_ratio_d.fasta "),intern = T, wait = T)
           } else  {
@@ -206,7 +212,7 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
           } else {
             entropy_file <- paste0(" -y -e ",paste0(entropy[1:3],collapse = ",")," -m ",entropy[4])
           }
-
+          
           if (run_entropy) {
             message(paste("ODIN will denoise",file))
             # message(paste0(dnoise," --fasta_input ",file,"_HELA_nonchimeras.fasta ",
@@ -222,6 +228,7 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
                           "-a ",alpha," -c ",cores," -r ",min_reads_ESV),intern = T, wait = T)
           }
         }
+      }
     }
   }
 
