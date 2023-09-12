@@ -11,7 +11,8 @@ mjolnir5_THOR(
   tax_dms_name = NULL,
   obipath = "",
   run_ecotag = T,
-  remove_DMS = T
+  remove_DMS = T,
+  minimum_circle = 0.7
 )
 }
 \arguments{
@@ -36,6 +37,13 @@ assignament software is applied but adding higher taxonomic ranks is desired.}
 \item{remove_DMS}{Logical. If TRUE, it will delete all obidms objects that are
 created during the process. This can save a lot of hard disk space. The FALSE 
 option is useful for developing and debugging.}
+
+\item{minimum_circle}{Numeric. from ecotag: Minimum identity considered for 
+the assignment circle (sequence is assigned to the LCA of all sequences 
+within a similarity circle of the best matches; the threshold for this circle 
+is the highest value between <CIRCLE_THRESHOLD> and the best assignment score 
+found for the query sequence). Give value as a normalized identity, e.g. 0.95 
+for an identity of 95%.}
 }
 \description{
 This is a wrapper of ecotag

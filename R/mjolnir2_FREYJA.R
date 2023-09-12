@@ -85,7 +85,7 @@
 mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", #fasta_output=F,
                             fastq_output=T,score_obialign=40,
                             demultiplexed=F,primer_F="GGWACWRGWTGRACWNTNTAYCCYCC",primer_R="TANACYTCNGGRTGNCCRAARAAYCA",
-                            R1_motif="_R1",R2_motif="_R2",obipath=NULL,remove_DMS=T){
+                            R1_motif="_R1",R2_motif="_R2",obipath=NULL,remove_DMS=T, run_on_tmp=F){
 
   message("FREYJA will do paired-end alignment, demultiplexing and length filter.")
   suppressPackageStartupMessages(library(parallel))
@@ -97,6 +97,12 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
   if (is.null(lib)) {
     message("lib can not be NULL, otherwise HELA won't find the files")
     exit()
+  }
+
+  if (run_on_tmp) {
+    tmp = "/tmp/"
+  } else {
+    tmp = ""
   }
 
   X <- NULL
@@ -111,17 +117,17 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
     for (i in 1:cores) for (j in 1:length(lib_prefix)) {
       formatted_i <- sprintf("%02d",i)
       X <- c(X,paste0(
-        "obi import --fastq-input ",lib_prefix[j],"_R2_part_",formatted_i,".fastq ", lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ; ",
-        "obi import --fastq-input ",lib_prefix[j],"_R1_part_",formatted_i,".fastq ", lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ; ",
-        "obi import --ngsfilter-input ngsfilter_",lib_prefix[j],".tsv ", lib_prefix[j],"_",formatted_i,"_FREYJA/ngsfile ; ",
-        "obi alignpairedend -R ", lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ", lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ", lib_prefix[j],"_",formatted_i,"_FREYJA/aligned_seqs ; ",
-        ifelse(remove_DMS,paste0("obi rm ", lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ; obi rm ", lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ; "),""),
-        "obi grep -p \"sequence[\'score\'] > ",score_obialign,"\" ", lib_prefix[j],"_",formatted_i,"_FREYJA/aligned_seqs ", lib_prefix[j],"_",formatted_i,"_FREYJA/good_seqs ; ",
-        ifelse(remove_DMS,paste0("obi rm ", lib_prefix[j],"_",formatted_i,"_FREYJA/aligned_seqs ; "),""),
-        "obi ngsfilter -t ", lib_prefix[j],"_",formatted_i,"_FREYJA/ngsfile -u ", lib_prefix[j],"_",formatted_i,"_FREYJA/unidentified_seqs ", lib_prefix[j],"_",formatted_i,"_FREYJA/good_seqs ",lib_prefix[j],"_",formatted_i,"_FREYJA/identified_seqs ; ",
-        ifelse(remove_DMS,paste0("obi rm ", lib_prefix[j],"_",formatted_i,"_FREYJA/good_seqs ; "),""),
-        "obi grep -p \"len(sequence)>",Lmin," and len(sequence)<",Lmax," and sequence[\'forward_tag\']!=None and sequence[\'reverse_tag\']!=None\" -S \"^[ACGT]+$\" ",lib_prefix[j],"_",formatted_i,"_FREYJA/identified_seqs ",lib_prefix[j],"_",formatted_i,"_FREYJA/filtered_seqs"))
-      libslist <- paste0(libslist,paste0("-c ",lib_prefix[j],"_",formatted_i,"_FREYJA/filtered_seqs "))
+        "obi import --fastq-input ",lib_prefix[j],"_R2_part_",formatted_i,".fastq ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ; ",
+        "obi import --fastq-input ",lib_prefix[j],"_R1_part_",formatted_i,".fastq ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ; ",
+        "obi import --ngsfilter-input ngsfilter_",lib_prefix[j],".tsv ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/ngsfile ; ",
+        "obi alignpairedend -R ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/aligned_seqs ; ",
+        ifelse(remove_DMS,paste0("obi rm ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ; obi rm ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ; "),""),
+        "obi grep -p \"sequence[\'score\'] > ",score_obialign,"\" ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/aligned_seqs ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/good_seqs ; ",
+        ifelse(remove_DMS,paste0("obi rm ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/aligned_seqs ; "),""),
+        "obi ngsfilter -t ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/ngsfile -u ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/unidentified_seqs ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/good_seqs ",tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/identified_seqs ; ",
+        ifelse(remove_DMS,paste0("obi rm ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/good_seqs ; "),""),
+        "obi grep -p \"len(sequence)>",Lmin," and len(sequence)<",Lmax," and sequence[\'forward_tag\']!=None and sequence[\'reverse_tag\']!=None\" -S \"^[ACGT]+$\" ",tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/identified_seqs ",tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/filtered_seqs"))
+      libslist <- paste0(libslist,paste0("-c ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/filtered_seqs "))
     }
   } else {
     metadata <- read.table(paste0(lib,"_metadata.tsv"),sep="\t",header=T)
@@ -137,16 +143,16 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
     for (i in 1:length(agnomens)) {
       print(fastqR1_list[i])
       X <- c(X,paste0(
-        "obi import --fastq-input ",gsub(R1_motif,R2_motif,fastqR1_list[i]), " ", lib,"_",agnomens[i],"_FREYJA/reads2 ; ",
-        "obi import --fastq-input ",fastqR1_list[i], " ", lib,"_",agnomens[i],"_FREYJA/reads1 ; ",
-        "obi import --ngsfilter-input ngsfilter_",agnomens[i],".tsv ", lib,"_",agnomens[i],"_FREYJA/ngsfile ; ",
-        "obi alignpairedend -R ", lib,"_",agnomens[i],"_FREYJA/reads2 ", lib,"_",agnomens[i],"_FREYJA/reads1 ", lib,"_",agnomens[i],"_FREYJA/aligned_seqs ; ",
-        ifelse(remove_DMS,paste0("obi rm ", lib,"_",agnomens[i],"_FREYJA/reads1 ; obi rm ", lib,"_",agnomens[i],"_FREYJA/reads2 ; "),""),
-        "obi grep -p \"sequence[\'score\'] > ",score_obialign,"\" ", lib,"_",agnomens[i],"_FREYJA/aligned_seqs ", lib,"_",agnomens[i],"_FREYJA/good_seqs ; ",
-        ifelse(remove_DMS,paste0("obi rm ", lib,"_",agnomens[i],"_FREYJA/aligned_seqs ; "),""),
-        "obi ngsfilter --no-tags -t ", lib,"_",agnomens[i],"_FREYJA/ngsfile -u ", lib,"_",agnomens[i],"_FREYJA/unidentified_seqs ", lib,"_",agnomens[i],"_FREYJA/good_seqs ",lib,"_",agnomens[i],"_FREYJA/identified_seqs ; ",
-        ifelse(remove_DMS,paste0("obi rm ", lib,"_",agnomens[i],"_FREYJA/good_seqs ; "),""),
-        "obi grep -p \"len(sequence)>",Lmin," and len(sequence)<",Lmax,"\" -S \"^[ACGT]+$\" ",lib,"_",agnomens[i],"_FREYJA/identified_seqs ",lib,"_",agnomens[i],"_FREYJA/filtered_seqs ; "))
+        "obi import --fastq-input ",gsub(R1_motif,R2_motif,fastqR1_list[i]), " ", tmp, lib,"_",agnomens[i],"_FREYJA/reads2 ; ",
+        "obi import --fastq-input ",fastqR1_list[i], " ", tmp, lib,"_",agnomens[i],"_FREYJA/reads1 ; ",
+        "obi import --ngsfilter-input ngsfilter_",agnomens[i],".tsv ", tmp, lib,"_",agnomens[i],"_FREYJA/ngsfile ; ",
+        "obi alignpairedend -R ", tmp, lib,"_",agnomens[i],"_FREYJA/reads2 ", tmp, lib,"_",agnomens[i],"_FREYJA/reads1 ", tmp, lib,"_",agnomens[i],"_FREYJA/aligned_seqs ; ",
+        ifelse(remove_DMS,paste0("obi rm ", tmp, lib,"_",agnomens[i],"_FREYJA/reads1 ; obi rm ", tmp, lib,"_",agnomens[i],"_FREYJA/reads2 ; "),""),
+        "obi grep -p \"sequence[\'score\'] > ",score_obialign,"\" ", tmp, lib,"_",agnomens[i],"_FREYJA/aligned_seqs ", tmp, lib,"_",agnomens[i],"_FREYJA/good_seqs ; ",
+        ifelse(remove_DMS,paste0("obi rm ", tmp, lib,"_",agnomens[i],"_FREYJA/aligned_seqs ; "),""),
+        "obi ngsfilter --no-tags -t ", tmp, lib,"_",agnomens[i],"_FREYJA/ngsfile -u ", tmp, lib,"_",agnomens[i],"_FREYJA/unidentified_seqs ", tmp, lib,"_",agnomens[i],"_FREYJA/good_seqs ", tmp, lib,"_",agnomens[i],"_FREYJA/identified_seqs ; ",
+        ifelse(remove_DMS,paste0("obi rm ", tmp, lib,"_",agnomens[i],"_FREYJA/good_seqs ; "),""),
+        "obi grep -p \"len(sequence)>",Lmin," and len(sequence)<",Lmax,"\" -S \"^[ACGT]+$\" ", tmp, lib,"_",agnomens[i],"_FREYJA/identified_seqs ", tmp, lib,"_",agnomens[i],"_FREYJA/filtered_seqs ; "))
     }
   }
   clust <- makeCluster(no_cores)
@@ -167,24 +173,24 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
   if (!demultiplexed){
     message("FREYJA is joining filtered reads into a single file.")
     # this step is necessary to join all sets of sequences to split them into different files
-    system(paste0("obi cat ",libslist," ",lib,"_FREYJA/concatenated"),intern=T,wait=T)
+    system(paste0("obi cat ",libslist," ", tmp, lib,"_FREYJA/concatenated"),intern=T,wait=T)
     if (remove_DMS) {
       system(paste0("rm -r ",gsub("-c ","",gsub("/filtered_seqs",".obidms",libslist))),intern=T,wait=T)
     }
     message("Sequence sets concatenated")
     message("FREYJA will create individual files for each sample in the dms directory, this could take a while..")
     # here the concatenated file is split into different samples
-    system(paste0("obi split -t \"sample\" -p ",lib,"_ ",lib,"_FREYJA/concatenated"),intern=T,wait=T)
+    system(paste0("obi split -t \"sample\" -p ",lib,"_ ", tmp, lib,"_FREYJA/concatenated"),intern=T,wait=T)
     # in order to make the next steps parallelizable it is nesary to export each file into a new dms
-    files <- system(paste0("obi ls ",lib,"_FREYJA | cut -f1 -d ':' | cut -f4 -d ' ' | grep 'sample' "),intern=T,wait=T)
+    files <- system(paste0("obi ls ", tmp, lib,"_FREYJA | cut -f1 -d ':' | cut -f4 -d ' ' | grep 'sample' "),intern=T,wait=T)
     files <- files[grep(lib,files)]
     for (file in files) {
       system(paste0("obi cat -c ",
-                    lib,"_FREYJA/",file, " ",
-                    file,"_FREYJA/filtered_seqs "),intern=T,wait=T)
+                    tmp, lib,"_FREYJA/",file, " ",
+                    tmp, file,"_FREYJA/filtered_seqs "),intern=T,wait=T)
     }
     if (remove_DMS) {
-      system(paste0("rm -r ",lib,"_FREYJA.obidms "),intern=T,wait=T)
+      system(paste0("rm -r ",tmp, lib,"_FREYJA.obidms "),intern=T,wait=T)
     }
   }
   # obi uniq vas performed in HELA in previous versions but now is computed here
@@ -199,9 +205,9 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
   for (file in files) {
     X <- c(X,paste0(ifelse(fastq_output,paste0("obi export --fastq-output -o ",
                                                file,".fastq ",
-                                               file,"/filtered_seqs ; "), ""),
-                    "obi uniq ",file,"/filtered_seqs ",file,"/uniq ; ",
-                    "obi export --fasta-output --only-keys \"COUNT\" ",file,"/uniq > ",file,"_uniq.fasta ; ",
+                                               tmp, file,"/filtered_seqs ; "), ""),
+                    "obi uniq ", tmp, file,"/filtered_seqs ",file,"/uniq ; ",
+                    "obi export --fasta-output --only-keys \"COUNT\" ", tmp, file,"/uniq > ",file,"_uniq.fasta ; ",
                     "sed -i 's/COUNT/size/g' ",file,"_uniq.fasta ; ",
                     "sed -i 's/;//g' ",file,"_uniq.fasta ; ",
                     "sed -E -i 's/(size=[0-9]*).*/\\1;/g' ",file,"_uniq.fasta ; ",
@@ -215,7 +221,7 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
 
 
   after_FREYJA <- mclapply(files,function(file){
-    output <- system(paste0("obi ls ",file," | grep 'filtered_seqs\\|uniq'"),intern = T,wait = T)
+    output <- system(paste0("obi ls ",tmp, file," | grep 'filtered_seqs\\|uniq'"),intern = T,wait = T)
     values <- as.numeric(gsub(".*count: ","",output))
     return(data.frame(file=file,
                       version=c("filtered sequences","uniq sequences"),

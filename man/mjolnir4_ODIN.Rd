@@ -13,6 +13,7 @@ mjolnir4_ODIN(
   alpha = 5,
   entropy = c(0.47, 0.23, 1.02, 313),
   algorithm = "DnoisE_SWARM",
+  run_dnoise = T,
   obipath = "",
   python_packages = "",
   swarmpath = NULL,
@@ -79,6 +80,11 @@ the ESV clustered into them.
 d)"DnoisE" - This option will run only DnoisE. This option will retrieve 
 quality filter fasta files for each sample that can 
 be used for other experiment without previous run of RAN, FREYJA and HELA.}
+
+\item{run_dnoise}{Logical. In the case of the algorithm='DnoisE_SWARM' there is
+the option of not running the DnoisE if it has been already run for a previous
+experiment. The HELA_nonchimeras.fasta is needed anyway to have the information
+of the number of sequences that will be used by RAGNAROC for the final summary.}
 
 \item{obipath}{Character string specifying the PATH to the obi binary.}
 
