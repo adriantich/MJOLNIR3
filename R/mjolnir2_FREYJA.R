@@ -191,6 +191,8 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
     }
     if (remove_DMS) {
       system(paste0("rm -r ",tmp, lib,"_FREYJA.obidms "),intern=T,wait=T)
+    } else if (run_on_tmp) {
+      system(paste0("mv ",tmp, lib,"_FREYJA.obidms ."),intern=T,wait=T)
     }
   }
   # obi uniq vas performed in HELA in previous versions but now is computed here
@@ -223,6 +225,12 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
   after_FREYJA <- mclapply(files,function(file){
     output <- system(paste0("obi ls ",tmp, file," | grep 'filtered_seqs\\|uniq'"),intern = T,wait = T)
     values <- as.numeric(gsub(".*count: ","",output))
+    if (remove_DMS) {
+      system(paste0("rm -r ",tmp, file,".obidms "),intern=T,wait=T)
+    } else if (run_on_tmp) {
+      system(paste0("mv ",tmp, file,".obidms ."),intern=T,wait=T)
+    }
+
     return(data.frame(file=file,
                       version=c("filtered sequences","uniq sequences"),
                       num_seqs=values))
@@ -256,9 +264,6 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
   # 
   # }
 
-  if (remove_DMS) {
-    system(paste0("rm -r *FREYJA.obidms "),intern=T,wait=T)
-  }
 
   message("FREYJA is done.")
 }
