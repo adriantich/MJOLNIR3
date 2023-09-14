@@ -61,6 +61,13 @@
 #' created during the process. This can save a lot of hard disk space. The FALSE 
 #' option is useful for developing and debugging.
 #' 
+#' @param run_on_tmp Logical. If TRUE, the obidms objects will be created in 
+#' the /tmp location. This increases the speed as the communication within the 
+#' processor and the object that is being edited all the time is faster. However,
+#' this method will consume much of the /tmp memory and it is recommended to have
+#' three to four times the memory available in the /tmp directory than the original
+#' forward files and remove_DMS=T
+#' 
 #' @examples 
 #' library(mjolnir)
 #' 
@@ -104,21 +111,20 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
   } else {
     tmp = ""
   }
-
-  X <- NULL
+  
+  import_fastqs <- NULL
+  count_seqs <- NULL
+  rest_of_commands <- NULL
   libslist <- NULL
   if (!demultiplexed){
-    before_FREYJA <- lapply(lib_prefix, function(prefix,cores){
-    mclapply(1:cores,function(i,prefix){
-      return(data.frame(file=paste0(prefix,"_R1_part_",sprintf("%02d",i),".fastq"),
-                        num_seqs=as.numeric(system(paste0("grep '>' ",prefix,"_R1_part_",sprintf("%02d",i),".fastq | wc -l"),intern = T,wait = T))))
-    },prefix=prefix,mc.cores = cores)
-  },cores=cores)
+    
     for (i in 1:cores) for (j in 1:length(lib_prefix)) {
       formatted_i <- sprintf("%02d",i)
-      X <- c(X,paste0(
+      import_fastqs <- c(import_fastqs,paste0(
         "obi import --fastq-input ",lib_prefix[j],"_R2_part_",formatted_i,".fastq ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ; ",
-        "obi import --fastq-input ",lib_prefix[j],"_R1_part_",formatted_i,".fastq ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ; ",
+        "obi import --fastq-input ",lib_prefix[j],"_R1_part_",formatted_i,".fastq ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ; "))
+      count_seqs <- c(count_seqs, paste0(tmp, lib_prefix[j],"_",formatted_i,"_FREYJA"))
+      rest_of_commands <- c(rest_of_commands,paste0(
         "obi import --ngsfilter-input ngsfilter_",lib_prefix[j],".tsv ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/ngsfile ; ",
         "obi alignpairedend -R ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/aligned_seqs ; ",
         ifelse(remove_DMS,paste0("obi rm ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads1 ; obi rm ", tmp, lib_prefix[j],"_",formatted_i,"_FREYJA/reads2 ; "),""),
@@ -142,9 +148,11 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
     # Create obitool commands
     for (i in 1:length(agnomens)) {
       print(fastqR1_list[i])
-      X <- c(X,paste0(
+      import_fastqs <- c(import_fastqs,paste0(
         "obi import --fastq-input ",gsub(R1_motif,R2_motif,fastqR1_list[i]), " ", tmp, lib,"_",agnomens[i],"_FREYJA/reads2 ; ",
-        "obi import --fastq-input ",fastqR1_list[i], " ", tmp, lib,"_",agnomens[i],"_FREYJA/reads1 ; ",
+        "obi import --fastq-input ",fastqR1_list[i], " ", tmp, lib,"_",agnomens[i],"_FREYJA/reads1 ; "))
+      count_seqs <- c(count_seqs, paste0(tmp, lib,"_",agnomens[i],"_FREYJA"))
+      rest_of_commands <- c(rest_of_commands,paste0(
         "obi import --ngsfilter-input ngsfilter_",agnomens[i],".tsv ", tmp, lib,"_",agnomens[i],"_FREYJA/ngsfile ; ",
         "obi alignpairedend -R ", tmp, lib,"_",agnomens[i],"_FREYJA/reads2 ", tmp, lib,"_",agnomens[i],"_FREYJA/reads1 ", tmp, lib,"_",agnomens[i],"_FREYJA/aligned_seqs ; ",
         ifelse(remove_DMS,paste0("obi rm ", tmp, lib,"_",agnomens[i],"_FREYJA/reads1 ; obi rm ", tmp, lib,"_",agnomens[i],"_FREYJA/reads2 ; "),""),
@@ -155,20 +163,34 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
         "obi grep -p \"len(sequence)>",Lmin," and len(sequence)<",Lmax,"\" -S \"^[ACGT]+$\" ", tmp, lib,"_",agnomens[i],"_FREYJA/identified_seqs ", tmp, lib,"_",agnomens[i],"_FREYJA/filtered_seqs ; "))
     }
   }
-  clust <- makeCluster(no_cores)
-  clusterExport(clust, list("X","old_path","obipath"),envir = environment())
-  clusterEvalQ(clust, {Sys.setenv(PATH = paste(old_path, obipath, sep = ":"))})
-  nu_sets <- ceiling(length(X)/no_cores)
-  for (set_i in 1:nu_sets) {
-    from <- (set_i-1)*no_cores + 1
-    if (set_i == nu_sets) {
-      to <- length(X)
-    } else {
-      to <- (set_i)*no_cores
-    }
-    parLapply(clust,X[from:to], function(x) system(x,intern=T,wait=T))
-  }
-  stopCluster(clust)
+  # clust <- makeCluster(no_cores)
+  # clusterExport(clust, list("X","old_path","obipath"),envir = environment())
+  # clusterEvalQ(clust, {Sys.setenv(PATH = paste(old_path, obipath, sep = ":"))})
+  
+  # run the commands in sets so in case of demultiplexed, if you have more samples
+  # than cores, you can allow that they don't get saturated. However, I think with 
+  # mclapplay this should not happen. # at the end I decide to do it without separating it.
+  # nu_sets <- ceiling(length(import_fastqs)/no_cores)
+  # for (set_i in 1:nu_sets) {
+  #   from <- (set_i-1)*no_cores + 1
+  #   if (set_i == nu_sets) {
+  #     to <- length(import_fastqs)
+  #   } else {
+  #     to <- (set_i)*no_cores
+  #   }
+  #   parLapply(clust,import_fastqs[from:to], function(x) system(x,intern=T,wait=T)) # commented to run with mclapply
+  # }
+  mclapply(import_fastqs, function(x) system(x,intern=T,wait=T), mc.cores = cores)
+  # here the number of lines correspond to the number of sequences. This way is faster
+  # than doing this with grep > file | wc -l
+  before_FREYJA <- mclapply(count_seqs,function(i){
+      return(data.frame(file=i,
+                        num_seqs=as.numeric(gsub(".*count: ","",system(paste0("obi ls ", i, " | grep reads1"),intern = T,wait = T), perl = T))))
+    },prefix=prefix,mc.cores = cores)
+  # now I run the rest of the commands.
+  mclapply(rest_of_commands, function(x) system(x,intern=T,wait=T), mc.cores = cores)
+  
+  # stopCluster(clust)
   # If not demultiplexed, then join all parts into a joined file and then split it into samples
   if (!demultiplexed){
     message("FREYJA is joining filtered reads into a single file.")

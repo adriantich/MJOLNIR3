@@ -18,7 +18,8 @@ mjolnir2_FREYJA(
   R1_motif = "_R1",
   R2_motif = "_R2",
   obipath = NULL,
-  remove_DMS = T
+  remove_DMS = T,
+  run_on_tmp = F
 )
 }
 \arguments{
@@ -52,6 +53,13 @@ the forward.}
 \item{remove_DMS}{Logical. If TRUE, it will delete all obidms objects that are
 created during the process. This can save a lot of hard disk space. The FALSE 
 option is useful for developing and debugging.}
+
+\item{run_on_tmp}{Logical. If TRUE, the obidms objects will be created in 
+the /tmp location. This increases the speed as the communication within the 
+processor and the object that is being edited all the time is faster. However,
+this method will consume much of the /tmp memory and it is recommended to have
+three to four times the memory available in the /tmp directory than the original
+forward files and remove_DMS=T}
 
 \item{lib_prefixes}{Character vector. Acronym for each sequencing library. This
 acronym must be of 4 characters in capital letters. Do not mix up library and
