@@ -26,7 +26,7 @@ MJOLNIR3 depends on the following dependencies, which must be installed in the s
   Help on installing DnoisE: 
   https://github.com/adriantich/DnoisE
   
-- SWARM v2.0 or newer ([Mahé et al. 2015](https://peerj.com/articles/1420/)) \
+- SWARM v3.0 or newer ([Mahé et al. 2015](https://peerj.com/articles/1420/)) \
   Help on installing SWARM: 
   https://github.com/torognes/swarm
   
