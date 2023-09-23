@@ -186,7 +186,7 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
   before_FREYJA <- mclapply(count_seqs,function(i){
       return(data.frame(file=i,
                         num_seqs=as.numeric(gsub(".*count: ","",system(paste0("obi ls ", i, " | grep reads1"),intern = T,wait = T), perl = T))))
-    },prefix=prefix,mc.cores = cores)
+    },mc.cores = cores)
   # now I run the rest of the commands.
   mclapply(rest_of_commands, function(x) system(x,intern=T,wait=T), mc.cores = cores)
   
