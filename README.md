@@ -62,7 +62,7 @@ MJOLNIR3 depends on the following dependencies, which must be installed in the s
         # activate the conda environment or your prefered one
         conda activate mjolnir3
         # clone MJOLNIR3 repository
-        git clone https://github.com/metabarpark/MJOLNIR3.git
+        git clone https://github.com/adriantich/MJOLNIR3.git
         cd MJOLNIR3
         # installation of Obitools3 
         # if you have problems with cmake, you can install it with conda
