@@ -161,6 +161,10 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
   suppressPackageStartupMessages(library(parallel))
   suppressPackageStartupMessages(library(dplyr))
   suppressPackageStartupMessages(library(tidyr))
+  
+  message("ODIN will first clear the battle field.")
+  message("All obidms objects called *ODIN.obidms will be removed.")
+  system("rm -r *ODIN.obidms",intern = T, wait = T)
 
   if (!(algorithm=="dnoise_swarm" | algorithm=="dnoise" | algorithm=="swarm_dnoise" | algorithm=="swarm")) {
     message("ERROR: algorithm has to be one of the following:\nDnoisE_SWARM\nSWARM_DnoisE\nSWARM\nDnoisE")

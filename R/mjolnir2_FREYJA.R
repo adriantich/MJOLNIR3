@@ -116,6 +116,9 @@ mjolnir2_FREYJA <- function(lib_prefix="",cores=1,Lmin=299,Lmax=320,lib="EXPX", 
   count_seqs <- NULL
   rest_of_commands <- NULL
   libslist <- NULL
+  message("FREYJA will first clear the battle field.")
+  message("Any directory or file containing the word FREYJA will be removed.")
+  system("rm -r *FREYJA*",intern = T, wait = T)
   if (!demultiplexed){
     
     for (i in 1:cores) for (j in 1:length(lib_prefix)) {

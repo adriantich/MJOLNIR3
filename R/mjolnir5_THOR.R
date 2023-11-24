@@ -82,17 +82,12 @@ mjolnir5_THOR <- function(lib,cores,tax_dir,tax_dms_name=NULL,obipath="",run_eco
 
   if (run_ecotag) {
     message("THOR will assign the taxonomy to the order level with ecotag.")
-
+    message("THOR will first clear the battle field.")
+    message("Any directory or file containing the word THOR will be removed.")
+    system("rm -r *THOR*",intern = T, wait = T)
     if (is.null(tax_dms_name)) {
       message("obidms with taxonomic database is required")
       exit()
-      # system(paste0("obi import ",tax_dir,"/",ref_db," ",lib, "_THOR_taxo/ref_seqs ; ",
-      #               "obi import --taxdump ",tax_dir,"/",tax_db," ",lib, "_THOR_taxo/taxonomy/my_tax ; ",
-      #               "obi grep --require-rank=species --require-rank=genus --require-rank=family --taxonomy ",lib, "_THOR_taxo/taxonomy/my_tax ",lib, "_THOR_taxo/ref_seqs ",lib, "_THOR_taxo/ref_seqs_clean ; ",
-      #               "obi uniq --taxonomy ",lib, "_THOR_taxo/taxonomy/my_tax ",lib, "_THOR_taxo/ref_seqs_clean ",lib, "_THOR_taxo/ref_seqs_uniq ; ",
-      #               "obi build_ref_db -t 0.95 --taxonomy ",lib, "_THOR_taxo/taxonomy/my_tax ",lib, "_THOR_taxo/ref_seqs_uniq ",lib, "_THOR_taxo/ref_db "),
-      #        intern = T, wait = T)
-      # tax_dms_name <- paste0(lib, "_THOR_taxo")
     }
 
     # it is necessary to run ecotag within a new directory for each part.
