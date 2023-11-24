@@ -137,10 +137,10 @@
 #' mjolnir3_HELA(lib,cores)
 #' 
 #' # Run ODIN
-#' mjolnir4_ODIN(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=5,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+#' mjolnir4_ODIN(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
 
 
-mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=5,entropy=c(0.47,0.23,1.02,313),#entropy=F/c("auto_sample",313)/c("auto_dataset")
+mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313),#entropy=F/c("auto_sample",313)/c("auto_dataset")
                           algorithm="DnoisE_SWARM",run_dnoise=T,obipath="",python_packages="", swarmpath=NULL, dnoise_path=NULL, 
                           remove_singletons = TRUE,remove_DMS=T){
   #####

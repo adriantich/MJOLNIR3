@@ -95,8 +95,9 @@ mjolnir5_THOR <- function(lib,cores,tax_dir,tax_dms_name=NULL,obipath="",run_eco
     # and can not change the name of the dms so make a copy in each directory and
     # run there the ecotag
     X <- NULL
+    create_dirs <- NULL
     for (i in 1:cores) {
-      system(paste0("mkdir ",lib, "_THOR_",sprintf("%02d",i)," ; cp -r ",tax_dir,"/",tax_dms_name,".obidms ",lib, "_THOR_",sprintf("%02d",i),"/. ; "),intern = T, wait = T)
+      create_dirs <- c(create_dirs,paste0("mkdir ",lib, "_THOR_",sprintf("%02d",i)," ; cp -r ",tax_dir,"/",tax_dms_name,".obidms ",lib, "_THOR_",sprintf("%02d",i),"/. ; "))
       X <- c(X,paste0("cd ",lib, "_THOR_",sprintf("%02d",i)," ; ",
                       "obi import --fasta-input ../",lib,"_ODIN_part_",sprintf("%02d",i),".fasta ",tax_dms_name,"/seqs ; ",
                       # "obi import --fasta-input ",lib,"_ODIN_part_",sprintf("%02d",i),".fasta ",lib, "_THOR_",sprintf("%02d",i),"/seqs ; ",
@@ -120,6 +121,7 @@ mjolnir5_THOR <- function(lib,cores,tax_dir,tax_dms_name=NULL,obipath="",run_eco
     clust <- makeCluster(no_cores)
     clusterExport(clust, list("X","old_path","obipath"),envir = environment())
     clusterEvalQ(clust, {Sys.setenv(PATH = paste(old_path, obipath, sep = ":"))})
+    parLapply(clust,create_dirs, function(x) system(x,intern=T,wait=T))
     parLapply(clust,X, function(x) system(x,intern=T,wait=T))
     stopCluster(clust)
   }
