@@ -219,9 +219,6 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
           
           if (run_entropy) {
             message(paste("ODIN will denoise",file))
-            # message(paste0(dnoise," --fasta_input ",file,"_HELA_nonchimeras.fasta ",
-            #                "--fasta_output ",file,"_ODIN ",
-            #                "-a ",alpha," -c ",cores,entropy," -r ",min_reads_ESV))
             system(paste0(dnoise," --fasta_input ",file,"_HELA_nonchimeras.fasta ",
                           "--fasta_output ",file,"_ODIN ",
                           "-a ",alpha," -c ",cores,entropy_file," -r ",min_reads_ESV),intern = T, wait = T)
@@ -233,6 +230,8 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
           }
         }
       }
+    } else {
+      sample_list <- gsub("_ODIN.*","",list.files(pattern="^[a-zA-Z0-9]{4}_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_ODIN.*denoised.*.fasta$"))
     }
   }
 
