@@ -88,7 +88,7 @@ MJOLNIR3 depends on the following dependencies, which must be installed in the s
         # installation of DnoisE
         git clone https://github.com/adriantich/DnoisE.git
         cd DnoisE/
-        python3 setup.py install
+        bash install.sh
         cd ../..
         # now turn to R
         R
