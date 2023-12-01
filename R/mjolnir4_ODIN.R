@@ -1,167 +1,155 @@
 #' ODIN: OTU Delimitation Inferred by Networks
-#' 
+#'
 #' ODIN performs MOTU clustering and/or denoising. It is one of the main steps of MJOLNIR.
-#' 
-#' @details 
-#' The function mjolnir4_ODIN() uses the four different strategies to delimit 
-#' MOTUs and/or ESVs. This strategies are set with the algorithm parameter: 
-#' a)"DnoisE_SWARM", b)"SWARM", c)"SWARM_DnoisE" and d)"DnoisE". 
-#' 
-#' In short, DnoisE refers to the denoising process with DnoisE to obtain ESV 
-#' and SWARM to a clustering process with SWARM to obtain MOTUs. DnoisE is a 
-#' software to merge spurious sequences into their "mothers" (see Antich et al. 
-#' 2022) to obtain Exact (also Amplicon) Sequence variants. DnoisE is an open 
-#' source and parallelizable alternative to Unoise that allows to introduce an 
-#' entropy correction based on the different entropies of each position in the 
-#' codon of coding genes. This is highly recommended for markers as COI for 
-#' which this program was intended. However, with the entropy=FALSE parameter, 
-#' this programs performs the same denoising procedure as described for Unoise3. 
-#' SWARM is an algorithm to delimit MOTUs, based on linkage-networks created by 
-#' step-by-step agregation. This clustering algorithm is not based on an 
-#' arbitrary, constant, absolute identity threshold. Conversely, SWARM is based 
-#' on an iterative aggregation of sequences that differ less than a given 
-#' distance d. This strategy results into linkage-networks of different sizes, 
-#' which can have different effective values for within-MOTU identity threshold, 
-#' depending on the complexity of the natural variability of the sequences 
-#' present in the sample. This procedure is very convenient in the case of 
-#' hypervariable metabarcoding markers, such as COI, which usually feature 
+#'
+#' @details
+#' The function mjolnir4_ODIN() uses the four different strategies to delimit
+#' MOTUs and/or ESVs. This strategies are set with the algorithm parameter:
+#' a)"DnoisE_SWARM", b)"SWARM", c)"SWARM_DnoisE" and d)"DnoisE".
+#'
+#' In short, DnoisE refers to the denoising process with DnoisE to obtain ESV
+#' and SWARM to a clustering process with SWARM to obtain MOTUs. DnoisE is a
+#' software to merge spurious sequences into their "mothers" (see Antich et al.
+#' 2022) to obtain Exact (also Amplicon) Sequence variants. DnoisE is an open
+#' source and parallelizable alternative to Unoise that allows to introduce an
+#' entropy correction based on the different entropies of each position in the
+#' codon of coding genes. This is highly recommended for markers as COI for
+#' which this program was intended. However, with the entropy=FALSE parameter,
+#' this programs performs the same denoising procedure as described for Unoise3.
+#' SWARM is an algorithm to delimit MOTUs, based on linkage-networks created by
+#' step-by-step agregation. This clustering algorithm is not based on an
+#' arbitrary, constant, absolute identity threshold. Conversely, SWARM is based
+#' on an iterative aggregation of sequences that differ less than a given
+#' distance d. This strategy results into linkage-networks of different sizes,
+#' which can have different effective values for within-MOTU identity threshold,
+#' depending on the complexity of the natural variability of the sequences
+#' present in the sample. This procedure is very convenient in the case of
+#' hypervariable metabarcoding markers, such as COI, which usually feature
 #' extremely high levels of natural diversity, in addition to the random sequencing errors.
-#' Dereplication step takes place after joining all samples into the same file 
+#' Dereplication step takes place after joining all samples into the same file
 #' before SWARM in algorithms a, b and c and after DnoisE in algorithms a and d
-#' 
-#' @param lib Character string. Acronym for the experiment. This
+#'
+#' @param experiment Character string. Acronym for the experiment. This
 #' acronym must be of 4 characters in capital letters. Do not mix up library and
 #' experiment acronyms. However they can be the same.
-#' 
+#'
 #' @param cores Numeric. Number of threads for parallel processing.
-#' 
-#' @param d Numeric value for d parameter of SWARM that refers to the maximum 
+#'
+#' @param d Numeric value for d parameter of SWARM that refers to the maximum
 #' number of differences between two sequences to be linked in the same cluster
-#' 
-#' @param min_reads_MOTU Numeric. Minimum number of reads that a MOTU needs to 
+#'
+#' @param min_reads_MOTU Numeric. Minimum number of reads that a MOTU needs to
 #' have to be retained.
-#' 
-#' @param min_reads_ESV Numeric. Minimum number of reads that an ESV needs to 
+#'
+#' @param min_reads_ESV Numeric. Minimum number of reads that an ESV needs to
 #' have to be retained.
-#' 
-#' @param alpha Numeric. Alpha value for DnoisE to run. 
-#' 
+#'
+#' @param alpha Numeric. Alpha value for DnoisE to run.
+#'
 #' @param entropy Logical, numeric or character vector specifying whether to run
-#' DnoisE with entropy correction and how. 
-#' 
-#' a) c(0.47,0.23,1.02,313) - formulation refers to the entropy values for the 
-#' first, second and third position in the codon and the length of the main 
+#' DnoisE with entropy correction and how.
+#'
+#' a) c(0.47,0.23,1.02,313) - formulation refers to the entropy values for the
+#' first, second and third position in the codon and the length of the main
 #' sequence length expected. See Antich et al. 2022 for further details.
-#' 
-#' b) FALSE - this will disable the entropy correction. Recommended for non 
+#'
+#' b) FALSE - this will disable the entropy correction. Recommended for non
 #' coding markers
-#' 
-#' c) c("auto_sample",313) - this will compute the entropy values for 313 
+#'
+#' c) c("auto_sample",313) - this will compute the entropy values for 313
 #' (plus or minus multiple of 3) bp within DnoisE and use them to perform the entropy correction
-#' 
-#' d) c("auto_dataset") - this will compute the entropy values for all the 
-#' dataset and all sequence lengths and use the main sequence length's values for 
+#'
+#' d) c("auto_dataset") - this will compute the entropy values for all the
+#' dataset and all sequence lengths and use the main sequence length's values for
 #' the entropy correction
-#' 
+#'
 #' @param algorithm Character. It specifies the algorithm to obtain MOTUs and/or ESVs. Ther are four options:
-#' 
-#' a)"DnoisE_SWARM" - This option will run DnoisE before SWARM. This option is the best 
-#' choice for highly diverse data sets so it will reduce the computation time of 
-#' SWARM. It also allows the analysis of metaphylogeographical approaches and 
-#' retrieves denoised and quality filter fasta files for each sample that can 
+#'
+#' a)"DnoisE_SWARM" - This option will run DnoisE before SWARM. This option is the best
+#' choice for highly diverse data sets so it will reduce the computation time of
+#' SWARM. It also allows the analysis of metaphylogeographical approaches and
+#' retrieves denoised and quality filter fasta files for each sample that can
 #' be used for other experiment without previous run of RAN, FREYJA and HELA. It
 #' will result on a table of MOTUs and the ESV clustered into them.
-#' 
+#'
 #' b)"SWARM" - This option will run only SWARM to obtain a MOTU table.
-#' 
-#' c)"SWARM_DnoisE" - This option will run SWARM before DnoisE. This option 
-#' responds to a philosophical point of view where the denoising of the 
-#' sequences have to be performed within MOTUs so closer sequences are compared 
-#' and to avoid that high abundant sequences from different MOTUs absorb 
-#' sequences (and thus their reads) from different MOTUs. However, there are no major 
-#' differences between this option and the "DnoisE_SWARM" option. It allows the 
-#' analysis of metaphylogeographical and will result on a table of MOTUs and 
+#'
+#' c)"SWARM_DnoisE" - This option will run SWARM before DnoisE. This option
+#' responds to a philosophical point of view where the denoising of the
+#' sequences have to be performed within MOTUs so closer sequences are compared
+#' and to avoid that high abundant sequences from different MOTUs absorb
+#' sequences (and thus their reads) from different MOTUs. However, there are no major
+#' differences between this option and the "DnoisE_SWARM" option. It allows the
+#' analysis of metaphylogeographical and will result on a table of MOTUs and
 #' the ESV clustered into them.
-#' 
-#' d)"DnoisE" - This option will run only DnoisE. This option will retrieve 
-#' quality filter fasta files for each sample that can 
+#'
+#' d)"DnoisE" - This option will run only DnoisE. This option will retrieve
+#' quality filter fasta files for each sample that can
 #' be used for other experiment without previous run of RAN, FREYJA and HELA.
-#' 
+#'
 #' @param run_dnoise Logical. In the case of the algorithm='DnoisE_SWARM' there is
 #' the option of not running the DnoisE if it has been already run for a previous
 #' experiment. The HELA_nonchimeras.fasta is needed anyway to have the information
-#' of the number of sequences that will be used by RAGNAROC for the final summary. 
-#' 
-#' @param obipath Character string specifying the PATH to the obi binary.
-#' 
-#' @param python_packages  Character string specifying the PATH to where the 
-#' Python3 packages are stored.
-#' 
-#' @param swarmpath Character string specifying the PATH to the SWARM program.
-#' 
-#' @param dnoise_path Character string specifying the PATH to the DnoisE program.
-#' 
+#' of the number of sequences that will be used by RAGNAROC for the final summary.
+#'
 #' @param remove_singletons Logical. If TRUE this will remove the sequences that,
-#' after dereplication when joining all samples (those will be denoised for when 
+#' after dereplication when joining all samples (those will be denoised for when
 #' algorithm="DnoisE_SWARM" or algorithm="DnoisE"), have only one read.
-#' 
+#'
 #' @param remove_DMS Logical. If TRUE, it will delete all obidms objects that are
-#' created during the process. This can save a lot of hard disk space. The FALSE 
+#' created during the process. This can save a lot of hard disk space. The FALSE
 #' option is useful for developing and debugging.
-#' 
-#' @examples 
+#'
+#' @examples
 #' library(mjolnir)
-#' 
+#'
 #' # Define input fastq files (only names of R1 files are needed)
 #' R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
-#' 
+#'
 #' # Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
 #' lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
-#' 
-#' # Enter number of cores to be used in parallel. 
+#'
+#' # Enter number of cores to be used in parallel.
 #' cores <- 7
-#' 
-#' # Run RAN
-#' mjolnir1_RAN(R1_filenames,cores,lib_prefixes,R1_motif="_R1",R2_motif="_R2")
-#' 
+#'
 #' # set experiment acronym
-#' lib <- "ULOY"
-#' 
+#' experiment <- "ULOY"
+#'
+#' # Run RAN
+#' mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
+#'              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
+#'
 #' # Run FREYJA
-#' mjolnir2_FREYJA(lib_prefix = lib_prefixes,lib = lib,cores = cores,Lmin=299,Lmax=320)
-#' 
-#' # set the maximum number of cores possible
-#' cores <- 16
-#' 
+#' mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
+#'
 #' # Run HELA
-#' mjolnir3_HELA(lib,cores)
-#' 
+#' mjolnir3_HELA(experiment, cores)
+#'
 #' # Run ODIN
-#' mjolnir4_ODIN(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+#' mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
 
 
-mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313),#entropy=F/c("auto_sample",313)/c("auto_dataset")
-                          algorithm="DnoisE_SWARM",run_dnoise=T,obipath="",python_packages="", swarmpath=NULL, dnoise_path=NULL, 
+mjolnir4_ODIN <- function(experiment=NULL, lib=NULL,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313),#entropy=F/c("auto_sample",313)/c("auto_dataset")
+                          algorithm="DnoisE_SWARM",run_dnoise=T,
                           remove_singletons = TRUE,remove_DMS=T){
   #####
   # 0: define variables
   #####
   algorithm = tolower(algorithm)
-  if (is.null(dnoise_path)) dnoise_path <- "~/DnoisE/src/"
-  dnoise_path <- path.expand(dnoise_path)
-  if (is.null(swarmpath)) swarmpath <- "~/swarm/bin/"
-  swarmpath <- path.expand(swarmpath)
-  swarm <- paste0(swarmpath,"swarm")
-  if (is.null(obipath)) obipath <- "~/obi3-env/bin/"
-  obipath <- path.expand(obipath)
-  dnoise <- paste0("python3 ", dnoise_path, "DnoisE.py") # Change this to where the Dnoise executable is
-  old_path <- Sys.getenv("PATH")
-  Sys.setenv(PATH = paste(python_packages,old_path, obipath, dnoise_path, sep = ":"))
+  swarm <- 'swarm'
+  dnoise <- 'dnoise'
 
   suppressPackageStartupMessages(library(parallel))
   suppressPackageStartupMessages(library(dplyr))
   suppressPackageStartupMessages(library(tidyr))
-  
+
+  if (!is.null(lib) && is.null(experiment)) {
+    # Use lib as experiment
+    experiment <- lib
+    # Print deprecation warning
+    warning("The 'lib' argument is deprecated. Please use 'experiment' instead.")
+  }
+
   message("ODIN will first clear the battle field.")
   message("All obidms objects called *ODIN.obidms will be removed.")
   system("rm -r *ODIN.obidms",intern = T, wait = T)
@@ -184,7 +172,7 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
     message("ODIN will denoise each sample file")
     if (file.exists("summary_HELA.RData")){
       load("summary_HELA.RData")
-      before_1_ODIN <- after_HELA
+      before_1_ODIN <- after_HELA # nolint: object_usage_linter.
     } else {
       before_1_ODIN <- mclapply(sample_list,function(file){
         output <- system(paste0("grep '>' ",file,"_HELA_nonchimeras.fasta | wc -l"),intern = T,wait = T)
@@ -216,7 +204,7 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
           } else {
             entropy_file <- paste0(" -y -e ",paste0(entropy[1:3],collapse = ",")," -m ",entropy[4])
           }
-          
+
           if (run_entropy) {
             message(paste("ODIN will denoise",file))
             system(paste0(dnoise," --fasta_input ",file,"_HELA_nonchimeras.fasta ",
@@ -242,7 +230,7 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
   # input
   # sample_list + _ODIN_Adcorr_denoised_ratio_d.fasta | _ODIN_denoised_ratio_d.fasta | _HELA_nonchimeras.fasta
   # final outputs
-  # DMS as lib"_ODIN/"
+  # DMS as experiment"_ODIN/"
 
   X <- NULL
   for (file in sample_list) {
@@ -261,67 +249,63 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
       "obi annotate -S sample:\"", gsub("^[a-zA-Z0-9]{4}_", "", file), "\" ", file,"_ODIN/sample  ", file,"_ODIN/sample_name "))
 
   }
-  clust <- makeCluster(cores)
-  clusterExport(clust, list("X","old_path","obipath"),envir = environment())
-  clusterEvalQ(clust, {Sys.setenv(PATH = paste(old_path, obipath, sep = ":"))})
-  parLapply(clust,X, function(x) system(x,intern=T,wait=T))
-  stopCluster(clust)
+  mclapply(X, function(x) system(x,intern=T,wait=T), mc.cores = cores)
 
-  for (i in 1:length(sample_list)) {
+  for (i in seq_along(sample_list)) {
     file <- sample_list[i]
     if (i==1) {
       system(paste0("obi cat -c ",
                     file,"_ODIN/sample_name",
-                    " ", lib,"_ODIN/version",i),
+                    " ", experiment,"_ODIN/version",i),
              intern = T, wait = T)
     } else if (i==length(sample_list)) {
       system(paste0("obi cat -c ",
                     file,"_ODIN/sample_name",
-                    " -c ", lib,"_ODIN/version",c(i-1),
-                    " ", lib,"_ODIN/samples ; ",
-                    "obi rm ", lib,"_ODIN/version",c(i-1)),
+                    " -c ", experiment,"_ODIN/version",c(i-1),
+                    " ", experiment,"_ODIN/samples ; ",
+                    "obi rm ", experiment,"_ODIN/version",c(i-1)),
              intern = T, wait = T)
     } else {
       system(paste0("obi cat -c ",
                     file,"_ODIN/sample_name",
-                    " -c ", lib,"_ODIN/version",c(i-1),
-                    " ", lib,"_ODIN/version",i," ; ",
-                    "obi rm ", lib,"_ODIN/version",c(i-1)),
+                    " -c ", experiment,"_ODIN/version",c(i-1),
+                    " ", experiment,"_ODIN/version",i," ; ",
+                    "obi rm ", experiment,"_ODIN/version",c(i-1)),
              intern = T, wait = T)
     }
   }
   system(paste0("obi uniq --merge 'sample' ",
-                lib,"_ODIN/samples ",
-                lib,"_ODIN/samples_uniq"),
+                experiment,"_ODIN/samples ",
+                experiment,"_ODIN/samples_uniq"),
          intern = T, wait = T)
   if (remove_singletons) {
     system(paste0("obi grep -p \"sequence[\'COUNT\'] > 1\" ",
-                  lib,"_ODIN/samples_uniq ",
-                  lib,"_ODIN/seq_nosing"),
+                  experiment,"_ODIN/samples_uniq ",
+                  experiment,"_ODIN/seq_nosing"),
            intern = T, wait = T)
     system(paste0("obi annotate --seq-rank ",
-                  lib,"_ODIN/seq_nosing ",
-                  lib,"_ODIN/seq_rank"),
+                  experiment,"_ODIN/seq_nosing ",
+                  experiment,"_ODIN/seq_rank"),
            intern = T, wait = T)
   } else {
     system(paste0("obi annotate --seq-rank ",
-                  lib,"_ODIN/samples_uniq ",
-                  lib,"_ODIN/seq_rank"),
+                  experiment,"_ODIN/samples_uniq ",
+                  experiment,"_ODIN/seq_rank"),
            intern = T, wait = T)
 
   }
   system(paste0("obi annotate --set-identifier ",
-                "\'\"\'",lib,"\'_%09d\" % sequence[\"seq_rank\"]\' ",
-                lib,"_ODIN/seq_rank ",
-                lib,"_ODIN/seq_id"),
+                "\'\"\'",experiment,"\'_%09d\" % sequence[\"seq_rank\"]\' ",
+                experiment,"_ODIN/seq_rank ",
+                experiment,"_ODIN/seq_id"),
          intern = T, wait = T)
 
-  output <- system(paste0("obi ls ",lib,"_ODIN | grep 'Line count'"),intern = T,wait = T)
+  output <- system(paste0("obi ls ",experiment,"_ODIN | grep 'Line count'"),intern = T,wait = T)
   values <- as.numeric(gsub(".*count: ","",output))
   version <- gsub(".*# ","",gsub(": Date.*","",output))
   after_2_ODIN <-data.frame(algorithm=algorithm,
-                                         version=version,
-                                         num_seqs=values)
+                            version=version,
+                            num_seqs=values)
 
 
 
@@ -333,14 +317,14 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
   # sample_list + _ODIN_Adcorr_denoised_ratio_d.fasta | _ODIN_denoised_ratio_d.fasta | _HELA_nonchimeras.fasta
   # final outputs
   if (algorithm == "dnoise"){
-    filetab <- paste0(lib, "_ODIN_ESV.csv")
+    filetab <- paste0(experiment, "_ODIN_ESV.csv")
   } else{
-    filetab <- paste0(lib, "_ODIN_seqs.csv")
+    filetab <- paste0(experiment, "_ODIN_seqs.csv")
   }
 
   system(paste0("obi export --tab-output --sep ','  -o ",
                 filetab, " ",
-                lib, "_ODIN/seq_id"),
+                experiment, "_ODIN/seq_id"),
          intern = T, wait = T)
 
 
@@ -351,9 +335,9 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
   #####
 
   # input
-  # filetab (4a) | lib"_ODIN/seq_id" (4b)
+  # filetab (4a) | experiment"_ODIN/seq_id" (4b)
   # final outputs
-  outfile <- paste0(lib,"_ODIN")# "_part_",sprintf("%02d",part),".fasta"
+  outfile <- paste0(experiment,"_ODIN")# "_part_",sprintf("%02d",part),".fasta"
   if (algorithm=="swarm_dnoise" | algorithm=="swarm" | algorithm=="dnoise_swarm"){
     outfile_MOTU <- paste0(outfile,"_counts.tsv")
     outfile_ESV <- paste0(outfile,"_ESV.tsv")
@@ -366,7 +350,7 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
 
   if (algorithm=="swarm_dnoise" | algorithm=="swarm" | algorithm=="dnoise_swarm"){ # 4a
     message("ODIN will cluster sequences into MOTUs with SWARM.")
-    system(paste0("obi export --fasta-output --only-keys \"COUNT\" ",lib,"_ODIN/seq_id > ",outfile,".fasta ; ",
+    system(paste0("obi export --fasta-output --only-keys \"COUNT\" ", experiment, "_ODIN/seq_id > ",outfile,".fasta ; ",
                   "sed -i 's/COUNT/size/g' ",outfile,".fasta ; ",
                   "sed -i 's/;//g' ",outfile,".fasta ; ",
                   "sed -E -i 's/(size=[0-9]*).*/\\1;/g' ",outfile,".fasta ; ",
@@ -397,7 +381,6 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
       cluster_reads <- NULL
       # second reduction
       cluster_reads <- mclapply(clusters,function(x) sum(as.numeric(lapply(X=(x),FUN=get_swarm_size))), mc.cores = cores)
-      # for (i in 1:length(clusters)) cluster_reads[i] <- sum(as.numeric(lapply(X=(clusters[[i]]),FUN=get_swarm_size)))
       clusters <- clusters[cluster_reads>=min_reads_MOTU]
       total_swarms_reduced <- length(clusters)
       after_4a_ODIN  <- data.frame(version = c("min_reads_MOTU","num_clusters","num_clusters_reduced","cluster_reads","cluster_reads_reduced"),
@@ -414,12 +397,6 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
 
     message("5. ODIN kept only ", total_swarms_reduced," MOTUs of size greater than or equal to ",min_reads_MOTU," reads.")
     motu_seqs_names <- stack(clusters) %>% rename(ID = values, MOTU = ind)
-    # motu_seqs_names <- unlist(clusters, use.names=F)
-
-    # # Generate a file with the list of ids of non-singleton clusters
-    # motulist <- file(paste0(lib,"_non_singleton_motu_list.txt"),"wt")
-    # writeLines(id,motulist)
-    # message("ODIN has created the file ",paste0(lib,"_non_singleton_motu_list.txt")," with the list of identifiers of non-singleton MOTUs.")
 
     # Read counts database and keep only the needed clusters
     message("6. ODIN is reading the abundance database. This could take Him a while, since He has just one eye left, after all.")
@@ -452,8 +429,8 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
     # divide dataset into different files for THOR
     db.total <- db.total[,c("ID","NUC_SEQ")]
     db.total <- paste(paste0(">",db.total$ID),db.total$NUC_SEQ,sep="\n")
-    db.total <- split(db.total, factor(sort(1:length(db.total)%%cores)))
-    for (part in 1:length(db.total)) {
+    db.total <- split(db.total, factor(sort(seq_along(db.total) %% cores)))
+    for (part in seq_along(db.total)) {
       writeLines(paste0(db.total[[part]],collapse = "\n"),paste0(outfile,"_part_",sprintf("%02d",part),".fasta"))
     }
 
@@ -498,9 +475,9 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
   } else { # 4b
 
     if (cores == 1) {
-      system(paste0("obi export --fasta-output --only-keys \"COUNT\" ",lib,"_ODIN/seq_id > ",paste0(outfile,"_part_01.fasta")), intern = T, wait = T)
+      system(paste0("obi export --fasta-output --only-keys \"COUNT\" ",experiment,"_ODIN/seq_id > ",paste0(outfile,"_part_01.fasta")), intern = T, wait = T)
     } else {
-      system(paste0("obi export --fasta-output --only-keys \"COUNT\" ",lib,"_ODIN/seq_id > ",outfile,".fasta "), intern = T, wait = T)
+      system(paste0("obi export --fasta-output --only-keys \"COUNT\" ",experiment,"_ODIN/seq_id > ",outfile,".fasta "), intern = T, wait = T)
       fasta_file <- readLines(paste0(outfile,".fasta"))
 
       seqs <- grep(">",file_read)
@@ -524,7 +501,7 @@ mjolnir4_ODIN <- function(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=
     }
   }
   save(file = "summary_ODIN.RData",list = c(c("alpha","min_reads_MOTU","min_reads_ESV","algorithm","run_entropy","entropy","after_2_ODIN"),
-                                     c("before_1_ODIN")[exists("before_1_ODIN")],c("after_4a_ODIN")[exists("after_4a_ODIN")]))
+                                            c("before_1_ODIN")[exists("before_1_ODIN")],c("after_4a_ODIN")[exists("after_4a_ODIN")]))
   if (remove_DMS) {
     system(paste0("rm -r *ODIN.obidms "),intern=T,wait=T)
   }
