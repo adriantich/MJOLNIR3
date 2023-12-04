@@ -30,6 +30,8 @@
 #' 
 #' @param vsearchpath Character string specifying the PATH to vsearch.
 #' 
+#' @export 
+#' 
 #' @examples 
 #' library(mjolnir)
 #' 

@@ -4,26 +4,24 @@
 \alias{mjolnir3_HELA}
 \title{HELA: Hierarchical Elimination of Lurking Artifacts}
 \usage{
-mjolnir3_HELA(lib, cores, vsearchpath = NULL)
+mjolnir3_HELA(experiment = NULL, lib = NULL, cores)
 }
 \arguments{
-\item{lib}{Character string. Acronym for the experiment. This
+\item{experiment}{Character string. Acronym for the experiment. This
 acronym must be of 4 characters in capital letters. Do not mix up library and
 experiment acronyms. However they can be the same.}
 
 \item{cores}{Numeric. Number of threads for parallel processing.}
-
-\item{vsearchpath}{Character string specifying the PATH to the vsearch package.}
 }
 \description{
-This function uses the uchime_denovo algorithm implemented in VSEARCH to 
+This function uses the uchime_denovo algorithm implemented in VSEARCH to
 remove chimaeric sequences from the dataset.
 }
 \details{
-HELA works in a sample-by-sample basis. HELA will process all 
-individual fasta files in the current folder 
-matching the pattern EXPX_XXXX_sample_XXX.fasta being EXPX the acronym set 
-by lib parameter. This allows for parallel 
+HELA works in a sample-by-sample basis. HELA will process all
+individual fasta files in the current folder
+matching the pattern EXPX_XXXX_sample_XXX.fasta being EXPX the acronym set
+by experiment parameter. This allows for parallel
 computing, significantly decreasing calculation times.
 }
 \examples{
@@ -35,21 +33,19 @@ R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_
 # Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
 lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
 
-# Enter number of cores to be used in parallel. 
+# Enter number of cores to be used in parallel.
 cores <- 7
 
-# Run RAN
-mjolnir1_RAN(R1_filenames,cores,lib_prefixes,R1_motif="_R1",R2_motif="_R2")
-
 # set experiment acronym
-lib <- "ULOY"
+experiment <- "ULOY"
+
+# Run RAN
+mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
+             cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 
 # Run FREYJA
-mjolnir2_FREYJA(lib_prefix = lib_prefixes,lib = lib,cores = cores,Lmin=299,Lmax=320)
-
-# set the maximum number of cores possible
-cores <- 16
+mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
-mjolnir3_HELA(lib,cores)
+mjolnir3_HELA(experiment, cores)
 }

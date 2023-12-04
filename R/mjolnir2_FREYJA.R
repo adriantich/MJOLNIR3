@@ -60,6 +60,8 @@
 #' three to four times the memory available in the /tmp directory than the original
 #' forward files and remove_DMS=T
 #'
+#' @export 
+#' 
 #' @examples
 #' library(mjolnir)
 #'

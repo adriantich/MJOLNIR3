@@ -100,6 +100,8 @@
 #' created during the process. This can save a lot of hard disk space. The FALSE
 #' option is useful for developing and debugging.
 #'
+#' @export 
+#' 
 #' @examples
 #' library(mjolnir)
 #'

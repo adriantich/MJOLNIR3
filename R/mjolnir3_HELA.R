@@ -16,6 +16,8 @@
 #'
 #' @param cores Numeric. Number of threads for parallel processing.
 #'
+#' @export 
+#' 
 #' @examples
 #' library(mjolnir)
 #'

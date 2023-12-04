@@ -41,6 +41,8 @@
 #' for an identity of 95%. For vsearch it is equivalent to the minimum id required
 #' for a match. Default: 0.7
 #' 
+#' @export 
+#' 
 #' @examples 
 #' library(mjolnir)
 #' 

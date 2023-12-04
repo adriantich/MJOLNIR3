@@ -73,6 +73,8 @@
 #' total abundance in the blank/neg/control is higher than this value in terms of
 #' relative abundance of the total reads in all samples (see Details).
 #' 
+#' @export 
+#' 
 #' @examples 
 #' library(mjolnir)
 #' 

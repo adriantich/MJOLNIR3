@@ -5,53 +5,60 @@
 \title{THOR: Taxonomy with Higher-than-Order Ranks}
 \usage{
 mjolnir5_THOR(
-  lib,
+  experiment = NULL,
+  lib = NULL,
   cores,
-  tax_dir,
+  tax_dir = ".",
   tax_dms_name = NULL,
-  obipath = "",
+  tax_db = NULL,
   run_ecotag = T,
+  vsearch = F,
   remove_DMS = T,
   minimum_circle = 0.7
 )
 }
 \arguments{
-\item{lib}{Character string. Acronym for the experiment. This
+\item{experiment}{Character string. Acronym for the experiment. This
 acronym must be of 4 characters in capital letters. Do not mix up library and
 experiment acronyms. However they can be the same.}
 
 \item{cores}{Numeric. Number of threads for parallel processing.}
 
-\item{tax_dir}{String specifying de PATH to the directory were the taxonomic 
-information is stored}
-
-\item{tax_dms_name}{Character string specifying the name of the obidms object
-without the ".obidms" extension.}
-
-\item{obipath}{Character string specifying the PATH to the obi binary.}
+\item{tax_db}{Character string specifying de PATH to the reference database. 
+In case of using ecotag, the database must be an .obidms object. Also, when 
+using ecotag it is important to have the following files in the same directory:
+order.complete.csv ; family_to_order.csv ; genus_to_family.csv}
 
 \item{run_ecotag}{Logical. Whether to run (TRUE, default) the ecotag taxonomic
 assignment or not (FALSE). The latter could take place when alternative taxonomic
 assignament software is applied but adding higher taxonomic ranks is desired.}
 
+\item{vsearch}{Logical. Whether to run (TRUE) the vsearch taxonomic
+assignment or not (FALSE, default). If vsearch has been selected, even if 
+run_ecotag=TRUE, vsearch will be used instead of ecotag.}
+
 \item{remove_DMS}{Logical. If TRUE, it will delete all obidms objects that are
 created during the process. This can save a lot of hard disk space. The FALSE 
 option is useful for developing and debugging.}
 
-\item{minimum_circle}{Numeric. from ecotag: Minimum identity considered for 
+\item{minimum_circle}{Numeric. For ecotag: Minimum identity considered for 
 the assignment circle (sequence is assigned to the LCA of all sequences 
 within a similarity circle of the best matches; the threshold for this circle 
 is the highest value between <CIRCLE_THRESHOLD> and the best assignment score 
 found for the query sequence). Give value as a normalized identity, e.g. 0.95 
-for an identity of 95%.}
+for an identity of 95%. For vsearch it is equivalent to the minimum id required
+for a match. Default: 0.7}
 }
 \description{
 This is a wrapper of ecotag
 }
 \details{
-After assignment with ecotag, higher taxa at ranks higher than order are added from custom CSV files.
+After assignment with ecotag, higher taxa at ranks higher than order are added
+from cust. The database used can be download or build using the NJORDR package
+(see https://github.com/adriantich/NJORDR-MJOLNIR3)
 
-The database used can be download or build using the NJORDR package (see https://github.com/adriantich/NJORDR-MJOLNIR3)
+For vsearch assignment, the database must be in fasta format and the taxonomy
+for the output CSV will be only in one single column.
 }
 \examples{
 library(mjolnir)
@@ -65,28 +72,26 @@ lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
 # Enter number of cores to be used in parallel. 
 cores <- 7
 
-# Run RAN
-mjolnir1_RAN(R1_filenames,cores,lib_prefixes,R1_motif="_R1",R2_motif="_R2")
-
 # set experiment acronym
-lib <- "ULOY"
+experiment <- "ULOY"
+
+# Run RAN
+mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
+             cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 
 # Run FREYJA
-mjolnir2_FREYJA(lib_prefix = lib_prefixes,lib = lib,cores = cores,Lmin=299,Lmax=320)
-
-# set the maximum number of cores possible
-cores <- 16
+mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
-mjolnir3_HELA(lib,cores)
+mjolnir3_HELA(experiment, cores)
 
 # Run ODIN
-mjolnir4_ODIN(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=5,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
 
 # set the directory where the database is stored
 tax_dir <- "~/taxo_NCBI/"
 tax_dms_name <- "DUFA_COI"
 
 # Run THOR
-mjolnir5_THOR(lib, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
+mjolnir5_THOR(experiment, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
 }

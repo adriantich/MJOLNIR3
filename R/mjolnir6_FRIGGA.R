@@ -13,6 +13,8 @@
 #' acronym must be of 4 characters in capital letters. Do not mix up library and
 #' experiment acronyms. However they can be the same.
 #' 
+#' @export 
+#' 
 #' @examples 
 #' library(mjolnir)
 #' 

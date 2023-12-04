@@ -4,10 +4,10 @@
 \alias{mjolnir7_LOKI}
 \title{LOKI: LULU Overseeing with Kinship Identification}
 \usage{
-mjolnir7_LOKI(lib, min_id = 0.84, vsearchpath = NULL)
+mjolnir7_LOKI(experiment = NULL, lib = NULL, min_id = 0.84, vsearchpath = NULL)
 }
 \arguments{
-\item{lib}{Character string. Acronym for the experiment. This
+\item{experiment}{Character string. Acronym for the experiment. This
 acronym must be of 4 characters in capital letters. Do not mix up library and
 experiment acronyms. However they can be the same.}
 
@@ -50,34 +50,32 @@ lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
 # Enter number of cores to be used in parallel. 
 cores <- 7
 
-# Run RAN
-mjolnir1_RAN(R1_filenames,cores,lib_prefixes,R1_motif="_R1",R2_motif="_R2")
-
 # set experiment acronym
-lib <- "ULOY"
+experiment <- "ULOY"
+
+# Run RAN
+mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
+             cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 
 # Run FREYJA
-mjolnir2_FREYJA(lib_prefix = lib_prefixes,lib = lib,cores = cores,Lmin=299,Lmax=320)
-
-# set the maximum number of cores possible
-cores <- 16
+mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
-mjolnir3_HELA(lib,cores)
+mjolnir3_HELA(experiment, cores)
 
 # Run ODIN
-mjolnir4_ODIN(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=5,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
 
 # set the directory where the database is stored
 tax_dir <- "~/taxo_NCBI/"
 tax_dms_name <- "DUFA_COI"
 
 # Run THOR
-mjolnir5_THOR(lib, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
+mjolnir5_THOR(experiment, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
 
 # Run FRIGGA
-mjolnir6_FRIGGA(lib)
+mjolnir6_FRIGGA(experiment)
 
 # Run LOKI
-mjolnir7_LOKI(lib, min_id=.84)
+mjolnir7_LOKI(experiment, min_id=.84)
 }

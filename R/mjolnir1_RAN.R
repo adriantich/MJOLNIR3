@@ -36,6 +36,8 @@
 #' @param R2_motif Character string that distinguishes the reverse line file from
 #' the forward.
 #'
+#' @export 
+#' 
 #' @examples
 #' library(mjolnir)
 #'
