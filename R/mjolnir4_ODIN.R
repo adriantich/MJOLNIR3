@@ -131,15 +131,18 @@
 #' mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
 
 
-mjolnir4_ODIN <- function(experiment=NULL, lib=NULL,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313),#entropy=F/c("auto_sample",313)/c("auto_dataset")
-                          algorithm="DnoisE_SWARM",run_dnoise=T,
-                          remove_singletons = TRUE,remove_DMS=T){
+mjolnir4_ODIN <- function(experiment = NULL, lib = NULL, cores, d = 13,
+                          min_reads_MOTU = 2, min_reads_ESV = 2, alpha = 4,
+                          entropy = c(0.47, 0.23, 1.02, 313),
+                          # entropy=F/c("auto_sample",313)/c("auto_dataset")
+                          algorithm = "DnoisE_SWARM", run_dnoise = TRUE,
+                          remove_singletons = TRUE, remove_DMS = TRUE) {
   #####
   # 0: define variables
   #####
-  algorithm = tolower(algorithm)
-  swarm <- 'swarm'
-  dnoise <- 'dnoise'
+  algorithm <- tolower(algorithm)
+  swarm <- "swarm"
+  dnoise <- "dnoise"
 
   suppressPackageStartupMessages(library(parallel))
   suppressPackageStartupMessages(library(dplyr))
@@ -154,9 +157,9 @@ mjolnir4_ODIN <- function(experiment=NULL, lib=NULL,cores,d=13,min_reads_MOTU=2,
 
   message("ODIN will first clear the battle field.")
   message("All obidms objects called *ODIN.obidms will be removed.")
-  system("rm -r *ODIN.obidms",intern = T, wait = T)
+  system("rm -r *ODIN.obidms", intern = TRUE, wait = TRUE)
 
-  if (!(algorithm=="dnoise_swarm" | algorithm=="dnoise" | algorithm=="swarm_dnoise" | algorithm=="swarm")) {
+  if (!(algorithm=="dnoise_swarm" || algorithm=="dnoise" || algorithm=="swarm_dnoise" || algorithm=="swarm")) {
     message("ERROR: algorithm has to be one of the following:\nDnoisE_SWARM\nSWARM_DnoisE\nSWARM\nDnoisE")
     quit()
   }
@@ -167,61 +170,76 @@ mjolnir4_ODIN <- function(experiment=NULL, lib=NULL,cores,d=13,min_reads_MOTU=2,
   #####
 
   # inputs
-  sample_list <- gsub("_HELA_nonchimeras.fasta","",list.files(pattern="^[a-zA-Z0-9]{4}_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_HELA_nonchimeras.fasta$"))
+  sample_list <- gsub("_HELA_nonchimeras.fasta", "", list.files(pattern="^[a-zA-Z0-9]{4}_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_HELA_nonchimeras.fasta$"))
   # ouputs
   # file"_ODIN_Adcorr_denoised_ratio_d.fasta | file"_ODIN_denoised_ratio_d.fasta
-  if (algorithm=="dnoise_swarm" | algorithm=="dnoise") {
+  if (algorithm == "dnoise_swarm" || algorithm == "dnoise") {
     message("ODIN will denoise each sample file")
-    if (file.exists("summary_HELA.RData")){
+    if (file.exists("summary_HELA.RData")) {
       load("summary_HELA.RData")
       before_1_ODIN <- after_HELA # nolint: object_usage_linter.
     } else {
       before_1_ODIN <- mclapply(sample_list,function(file){
-        output <- system(paste0("grep '>' ",file,"_HELA_nonchimeras.fasta | wc -l"),intern = T,wait = T)
+        output <- system(paste0("grep '>' ",file,"_HELA_nonchimeras.fasta | wc -l"),
+                         intern = TRUE, wait = TRUE)
         value <- as.numeric(output)
         return(data.frame(file=paste0(file,"_HELA_nonchimeras.fasta"),
                           num_seqs=value))
       },mc.cores = cores)
     }
-    if(run_dnoise | algorithm=="dnoise") {
-      if(entropy[1]=="auto_dataset") {
+    if(run_dnoise || algorithm=="dnoise") {
+      if(entropy[1] == "auto_dataset") {
         system(paste0("cat *_HELA_nonchimeras.fasta >file_for_entropy.fasta ; ",
-                      dnoise," --fasta_input file_for_entropy.fasta -g"),intern = T, wait = T)
+                      dnoise, " --fasta_input file_for_entropy.fasta -g"),
+               intern = TRUE, wait = TRUE)
         entropies  <- read.csv("file_for_entropy.fasta_entropy_values.csv")
-        entropy <- c(entropies[1,4:6],entropies[1,1])
+        entropy <- c(entropies[1, 4:6],entropies[1, 1])
       }
       for (file in sample_list) {
-        seq_counts <- before_1_ODIN$num_seqs[before_1_ODIN$file==paste0(file,"_HELA_nonchimeras.fasta")]
+        seq_counts <- before_1_ODIN$num_seqs[before_1_ODIN$file == paste0(file, "_HELA_nonchimeras.fasta")]
         if (seq_counts==1) {
           if (run_entropy) {
-            system(paste0("cp ",file,"_HELA_nonchimeras.fasta ",file,"_ODIN_Adcorr_denoised_ratio_d.fasta "),intern = T, wait = T)
+            system(paste0("cp ", file, "_HELA_nonchimeras.fasta ",
+                          file, "_ODIN_Adcorr_denoised_ratio_d.fasta "),
+                   intern = TRUE, wait = TRUE)
           } else  {
-            system(paste0("cp ",file,"_HELA_nonchimeras.fasta ",file,"_ODIN_denoised_ratio_d.fasta "),intern = T, wait = T)
+            system(paste0("cp ", file, "_HELA_nonchimeras.fasta ",
+                          file, "_ODIN_denoised_ratio_d.fasta "),
+                   intern = TRUE, wait = TRUE)
           }
         } else {
           if (is.logical(entropy)) {
             entropy_file <- ""
           } else if(entropy[1]=="auto_sample") {
-            entropy_file <- paste0(" -y -m ",entropy[2])
+            entropy_file <- paste0(" -y -m ", entropy[2])
           } else {
-            entropy_file <- paste0(" -y -e ",paste0(entropy[1:3],collapse = ",")," -m ",entropy[4])
+            entropy_file <- paste0(" -y -e ", paste0(entropy[1:3],
+                                                     collapse = ","),
+                                   " -m ", entropy[4])
           }
 
           if (run_entropy) {
-            message(paste("ODIN will denoise",file))
-            system(paste0(dnoise," --fasta_input ",file,"_HELA_nonchimeras.fasta ",
-                          "--fasta_output ",file,"_ODIN ",
-                          "-a ",alpha," -c ",cores,entropy_file," -r ",min_reads_ESV),intern = T, wait = T)
+            message(paste("ODIN will denoise", file))
+            system(paste0(dnoise,
+                          " --fasta_input ", file, "_HELA_nonchimeras.fasta ",
+                          "--fasta_output ", file, "_ODIN ",
+                          "-a ", alpha, " -c ", cores,
+                          entropy_file," -r ", min_reads_ESV),
+                   intern = TRUE, wait = TRUE)
           } else  {
-            message(paste("ODIN will denoise",file))
-            system(paste0(dnoise," --fasta_input ",file,"_HELA_nonchimeras.fasta ",
-                          "--fasta_output ",file,"_ODIN ",
-                          "-a ",alpha," -c ",cores," -r ",min_reads_ESV),intern = T, wait = T)
+            message(paste("ODIN will denoise", file))
+            system(paste0(dnoise,
+                          " --fasta_input ", file, "_HELA_nonchimeras.fasta ",
+                          "--fasta_output ", file, "_ODIN ",
+                          "-a ",alpha," -c ",cores,
+                          " -r ",min_reads_ESV),
+                   intern = TRUE, wait = TRUE)
           }
         }
       }
     } else {
-      sample_list <- gsub("_ODIN.*","",list.files(pattern="^[a-zA-Z0-9]{4}_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_ODIN.*denoised.*.fasta$"))
+      sample_list <- gsub("_ODIN.*", "",
+                          list.files(pattern = "^[a-zA-Z0-9]{4}_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_ODIN.*denoised.*.fasta$"))
     }
   }
 
@@ -236,14 +254,14 @@ mjolnir4_ODIN <- function(experiment=NULL, lib=NULL,cores,d=13,min_reads_MOTU=2,
 
   X <- NULL
   for (file in sample_list) {
-    if (algorithm=="dnoise_swarm" | algorithm=="dnoise") {
+    if (algorithm == "dnoise_swarm" || algorithm == "dnoise") {
       if (run_entropy) {
-        input_file <- paste0(file,"_ODIN_Adcorr_denoised_ratio_d.fasta")
+        input_file <- paste0(file, "_ODIN_Adcorr_denoised_ratio_d.fasta")
       } else {
-        input_file <- paste0(file,"_ODIN_denoised_ratio_d.fasta")
+        input_file <- paste0(file, "_ODIN_denoised_ratio_d.fasta")
       }
     } else {
-      input_file <- paste0(file,"_HELA_nonchimeras.fasta")
+      input_file <- paste0(file, "_HELA_nonchimeras.fasta")
     }
     X <- c(X,paste0(
       "sed -i 's/;size/; COUNT/g' ",input_file," ; ",
@@ -251,63 +269,63 @@ mjolnir4_ODIN <- function(experiment=NULL, lib=NULL,cores,d=13,min_reads_MOTU=2,
       "obi annotate -S sample:\"", gsub("^[a-zA-Z0-9]{4}_", "", file), "\" ", file,"_ODIN/sample  ", file,"_ODIN/sample_name "))
 
   }
-  mclapply(X, function(x) system(x,intern=T,wait=T), mc.cores = cores)
+  mclapply(X, function(x) system(x,intern = TRUE, wait = TRUE), mc.cores = cores)
 
   for (i in seq_along(sample_list)) {
     file <- sample_list[i]
-    if (i==1) {
+    if (i == 1) {
       system(paste0("obi cat -c ",
                     file,"_ODIN/sample_name",
                     " ", experiment,"_ODIN/version",i),
-             intern = T, wait = T)
+             intern = TRUE, wait = TRUE)
     } else if (i==length(sample_list)) {
       system(paste0("obi cat -c ",
-                    file,"_ODIN/sample_name",
-                    " -c ", experiment,"_ODIN/version",c(i-1),
-                    " ", experiment,"_ODIN/samples ; ",
-                    "obi rm ", experiment,"_ODIN/version",c(i-1)),
-             intern = T, wait = T)
+                    file, "_ODIN/sample_name",
+                    " -c ", experiment, "_ODIN/version", c(i - 1),
+                    " ", experiment, "_ODIN/samples ; ",
+                    "obi rm ", experiment, "_ODIN/version", c(i - 1)),
+             intern = TRUE, wait = TRUE)
     } else {
       system(paste0("obi cat -c ",
-                    file,"_ODIN/sample_name",
-                    " -c ", experiment,"_ODIN/version",c(i-1),
-                    " ", experiment,"_ODIN/version",i," ; ",
-                    "obi rm ", experiment,"_ODIN/version",c(i-1)),
-             intern = T, wait = T)
+                    file, "_ODIN/sample_name",
+                    " -c ", experiment, "_ODIN/version", c(i - 1),
+                    " ", experiment, "_ODIN/version", i, " ; ",
+                    "obi rm ", experiment, "_ODIN/version", c(i - 1)),
+             intern = TRUE, wait = TRUE)
     }
   }
   system(paste0("obi uniq --merge 'sample' ",
-                experiment,"_ODIN/samples ",
-                experiment,"_ODIN/samples_uniq"),
-         intern = T, wait = T)
+                experiment, "_ODIN/samples ",
+                experiment, "_ODIN/samples_uniq"),
+         intern = TRUE, wait = TRUE)
   if (remove_singletons) {
     system(paste0("obi grep -p \"sequence[\'COUNT\'] > 1\" ",
-                  experiment,"_ODIN/samples_uniq ",
-                  experiment,"_ODIN/seq_nosing"),
-           intern = T, wait = T)
+                  experiment, "_ODIN/samples_uniq ",
+                  experiment, "_ODIN/seq_nosing"),
+           intern = TRUE, wait = TRUE)
     system(paste0("obi annotate --seq-rank ",
-                  experiment,"_ODIN/seq_nosing ",
-                  experiment,"_ODIN/seq_rank"),
-           intern = T, wait = T)
+                  experiment, "_ODIN/seq_nosing ",
+                  experiment, "_ODIN/seq_rank"),
+           intern = TRUE, wait = TRUE)
   } else {
     system(paste0("obi annotate --seq-rank ",
-                  experiment,"_ODIN/samples_uniq ",
-                  experiment,"_ODIN/seq_rank"),
-           intern = T, wait = T)
+                  experiment, "_ODIN/samples_uniq ",
+                  experiment, "_ODIN/seq_rank"),
+           intern = TRUE, wait = TRUE)
 
   }
   system(paste0("obi annotate --set-identifier ",
-                "\'\"\'",experiment,"\'_%09d\" % sequence[\"seq_rank\"]\' ",
-                experiment,"_ODIN/seq_rank ",
-                experiment,"_ODIN/seq_id"),
-         intern = T, wait = T)
+                "\'\"\'", experiment, "\'_%09d\" % sequence[\"seq_rank\"]\' ",
+                experiment, "_ODIN/seq_rank ",
+                experiment, "_ODIN/seq_id"),
+         intern = TRUE, wait = TRUE)
 
-  output <- system(paste0("obi ls ",experiment,"_ODIN | grep 'Line count'"),intern = T,wait = T)
-  values <- as.numeric(gsub(".*count: ","",output))
-  version <- gsub(".*# ","",gsub(": Date.*","",output))
-  after_2_ODIN <-data.frame(algorithm=algorithm,
-                            version=version,
-                            num_seqs=values)
+  output <- system(paste0("obi ls ", experiment, "_ODIN | grep 'Line count'"), intern = T, wait = T)
+  values <- as.numeric(gsub(".*count: ", "", output))
+  version <- gsub(".*# ", "", gsub(": Date.*", "", output))
+  after_2_ODIN <-data.frame(algorithm = algorithm,
+                            version = version,
+                            num_seqs = values)
 
 
 

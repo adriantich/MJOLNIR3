@@ -170,7 +170,7 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
   # MOTU/ESV + taxa info with LULU/without LULU
   # ESV within MOTU only available for ODIN_algorithm DnoisE_SWARM/SWARM_DnoisE
 
-  if (LOKI | file.exists(paste0(experiment,"_LOKI_Curated.tsv"))) {
+  if (LOKI || file.exists(paste0(experiment,"_LOKI_Curated.tsv"))) {
     db <- read.csv(paste0(experiment,"_LOKI_Curated.tsv"), sep="\t",head=T,stringsAsFactors = F)
   } else {
     db <- read.csv(paste0(experiment,"_FRIGGA.tsv"), sep="\t",head=T,stringsAsFactors = F)
@@ -211,7 +211,7 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
 
   # Select sample abundance columns
   sample_cols <- grep("sample",names(db))
-  initial_no_sample_cols <- length(sample_cols)
+  # initial_no_sample_cols <- length(sample_cols)
   sample_names <- names(db[sample_cols])
 
   # Change agnomens by original names 
@@ -324,13 +324,13 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
     # remove numts
     if (remove_numts) {
       message("numts will be removed")
-      no_ESV_before_numts <- dim(ESV_data_initial)[1]
+      # no_ESV_before_numts <- dim(ESV_data_initial)[1]
       lengths <- nchar(as.vector(ESV_data_initial$NUC_SEQ))
       ESV_data_initial <- ESV_data_initial[(lengths-313)%%3 == 0,]
       lengths <- nchar(as.vector(ESV_data_initial$NUC_SEQ))
 
-      no_numts_data <- c()
-      numts_seqs <- c()
+      # no_numts_data <- c()
+      # numts_seqs <- c()
   
       number_of_motus <- length(unique(ESV_data_initial$MOTU))
       motu_taxa <- data.frame("id" = db$id, "Metazoa" = c(db$kingdom_name == "Metazoa" & !is.na(db$kingdom_name)))
@@ -404,7 +404,7 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
   }
   if (ODIN) {
     RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN was used to obtain meaningful units. In your case you chose the ",algorithm," algorithm.\n")
-    if (algorithm=="dnoise_swarm" | algorithm=="dnoise") {
+    if (algorithm=="dnoise_swarm" || algorithm=="dnoise") {
       RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN used DnoisE to obtain the ESV's of your samples running within them with the following options:\n")
       if (!is.logical(entropy)) {
         RAGNAROC_report <-  paste(RAGNAROC_report, "Entropy correction with sequences delimited to a multiple of 313bp, alpha",alpha,"and minimum number of reads of",min_reads_ESV,"\n")

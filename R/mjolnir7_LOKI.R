@@ -120,7 +120,7 @@ mjolnir7_LOKI <- function(experiment=NULL, lib=NULL,min_id = .84, vsearchpath = 
   deleted_otu_fate <- (curated_result$otu_map[curated_result$otu_map$curated=="merged",])
   deleted_otu_fate$original <- ""
   deleted_otu_fate$id_removed <- rownames(deleted_otu_fate)
-  for (i in 1:nrow(deleted_otu_fate)){
+  for (i in seq_len(nrow(deleted_otu_fate))){
     deleted_otu_fate$original[i] <- db$SCIENTIFIC_NAME[db$id==rownames(deleted_otu_fate)[i]]
   }
   parents_info <- db[db$id%in%deleted_otu_fate$parent_id,c("id","SCIENTIFIC_NAME","superkingdom_name","kingdom_name","phylum_name","class_name","order_name","family_name")]

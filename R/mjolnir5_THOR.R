@@ -163,7 +163,7 @@ mjolnir5_THOR <- function(experiment=NULL, lib=NULL,cores,
     class_to_sk <- unique(taxo_names[,2:5])
     phylum_to_sk <- unique(class_to_sk[,2:4])
     kingdom_to_sk <-unique(phylum_to_sk[,2:3])
-    showlines <- 1
+    # showlines <- 1
     
     family_to_order <- read.table(paste0(tax_dir,"/","family_to_order.csv"),sep=",",head=T)
     genus_to_family <- read.table(paste0(tax_dir,"/","genus_to_family.csv"),sep=",",head=T)
