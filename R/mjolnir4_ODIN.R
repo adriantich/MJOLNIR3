@@ -132,11 +132,42 @@
 
 
 mjolnir4_ODIN <- function(experiment = NULL, lib = NULL, cores, d = 13,
-                          min_reads_MOTU = 2, min_reads_ESV = 2, alpha = 4,
+                          min_reads_MOTU = 2, min_reads_ESV = 2, 
+                          min_relative=1/50000,
+                          blank_relative=0.1,
+                          metadata_table="",
+                          alpha = 4,
                           entropy = c(0.47, 0.23, 1.02, 313),
                           # entropy=F/c("auto_sample",313)/c("auto_dataset")
                           algorithm = "DnoisE_SWARM", run_dnoise = TRUE,
                           remove_singletons = TRUE, remove_DMS = TRUE) {
+
+
+  #####
+  # the steps in this function are:
+  # 0: define variables
+  # 1: D and DS -> denoise the fasta files
+  # filter1: D,DS,SD,S -> remove relative abundances below min_relative
+  # 2: D,DS,SD,S -> cat all fasta and perform obi uniq, annotate
+  # filter2: D,DS,SD,S -> remove singletons # this will improve SWARM performance
+  # filter3a: D,DS -> blank relative abundances filter  
+  # 3: D,DS,SD,S -> export csv file of sequences (if denoised, they are ESV)
+  # 4a: DS,SD,S -> do SWARM and create csv files of MOTUs and ESV or seqs. Also create fasta files from MOTU csv
+  # 4ab: SD -> run DnoisE over the csv files
+  # filter3b: SD,S -> blank relative abundances filter  
+  # 4b: D -> divide fasta file into different parts
+  #####
+
+  # for the dnoise_swarm algorithm with samples already dnoised
+  # first run where they are dnoised:
+  # 0,1,filter1,2,filter2,filter3a
+  # then export fasta files as 'samplename_denoised_blank_corrected.fasta'
+  # when reusing the dnoised samples:
+  # 0
+  # 1b: DS -> read metadata table, selsect samples from metadata column dnoised_file
+  # 2,3,4a
+
+
   #####
   # 0: define variables
   #####
@@ -244,7 +275,7 @@ mjolnir4_ODIN <- function(experiment = NULL, lib = NULL, cores, d = 13,
   }
 
   #####
-  # 2: D,DS,S,S -> cat all fasta and perform obi uniq, annotate
+  # 2: D,DS,SD,S -> cat all fasta and perform obi uniq, annotate
   #####
 
   # input
@@ -327,10 +358,14 @@ mjolnir4_ODIN <- function(experiment = NULL, lib = NULL, cores, d = 13,
                             version = version,
                             num_seqs = values)
 
+  #####
+  # 
+  #####
+
 
 
   #####
-  # 3: D,DS,S,S -> export csv file of sequences (if denoised, they are ESV)
+  # 3: D,DS,SD,S -> export csv file of sequences (if denoised, they are ESV)
   #####
 
   # input
