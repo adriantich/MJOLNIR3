@@ -23,7 +23,7 @@
 #' bp length. Then removes sequences with stop codons and those metazoan 
 #' sequences that do not translate for 5 specific conservative aminoacids.
 #' 
-#' @param lib Character string. Acronym for the experiment. This
+#' @param experiment Character string. Acronym for the experiment. This
 #' acronym must be of 4 characters in capital letters. Do not mix up library and
 #' experiment acronyms. However they can be the same.
 #' 
@@ -73,6 +73,8 @@
 #' total abundance in the blank/neg/control is higher than this value in terms of
 #' relative abundance of the total reads in all samples (see Details).
 #' 
+#' @export 
+#' 
 #' @examples 
 #' library(mjolnir)
 #' 
@@ -85,51 +87,56 @@
 #' # Enter number of cores to be used in parallel. 
 #' cores <- 7
 #' 
-#' # Run RAN
-#' mjolnir1_RAN(R1_filenames,cores,lib_prefixes,R1_motif="_R1",R2_motif="_R2")
-#' 
 #' # set experiment acronym
-#' lib <- "ULOY"
+#' experiment <- "ULOY"
+#' 
+#' # Run RAN
+#' mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
+#'              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 #' 
 #' # Run FREYJA
-#' mjolnir2_FREYJA(lib_prefix = lib_prefixes,lib = lib,cores = cores,Lmin=299,Lmax=320)
-#' 
-#' # set the maximum number of cores possible
-#' cores <- 16
+#' mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 #' 
 #' # Run HELA
-#' mjolnir3_HELA(lib,cores)
+#' mjolnir3_HELA(experiment, cores)
 #' 
 #' # Run ODIN
-#' mjolnir4_ODIN(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=5,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+#' mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
 #' 
 #' # set the directory where the database is stored
 #' tax_dir <- "~/taxo_NCBI/"
 #' tax_dms_name <- "DUFA_COI"
 #' 
 #' # Run THOR
-#' mjolnir5_THOR(lib, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
+#' mjolnir5_THOR(experiment, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
 #' 
 #' # Run FRIGGA
-#' mjolnir6_FRIGGA(lib)
+#' mjolnir6_FRIGGA(experiment)
 #' 
 #' # Run LOKI
-#' mjolnir7_LOKI(lib, min_id=.84)
+#' mjolnir7_LOKI(experiment, min_id=.84)
 #' 
 #' # Run RAGNAROC
-#' mjolnir8_RAGNAROC(lib,min_reads=2,min_relative=1/50000,remove_bacteria=T,remove_contamination=F,ESV_within_MOTU=T,blank_col="BLANK",blank_tag=T,remove_numts=F,cores=1,blank_relative=0.1)
+#' mjolnir8_RAGNAROC(experiment,min_reads=2,min_relative=1/50000,remove_bacteria=T,remove_contamination=F,ESV_within_MOTU=T,blank_col="BLANK",blank_tag=T,remove_numts=F,cores=1,blank_relative=0.1)
 
-mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_ESV="",min_reads=2,min_relative=1/50000,
+mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output_file="",output_file_ESV="",min_reads=2,min_relative=1/50000,
                               remove_bacteria=T,remove_contamination=F,contamination_file="contaminants.txt",
                               ESV_within_MOTU=T,blank_col="BLANK",blank_tag=T,remove_numts=F,cores=1,blank_relative=0.1){
-
+  
+  if (!is.null(lib) && is.null(experiment)) {
+    # Use lib as experiment
+    experiment <- lib
+    # Print deprecation warning
+    warning("The 'lib' argument is deprecated. Please use 'experiment' instead.")
+  }
+  
   message("RAGNAROC is coming. Original sample names will be recovered.")
   suppressPackageStartupMessages(library(tidyr))
   if (output_file == "") {
-    output_file <- paste0(lib,"_RAGNAROC_final_dataset.tsv")
+    output_file <- paste0(experiment,"_RAGNAROC_final_dataset.tsv")
   }
   if (output_file_ESV == "") {
-    output_file_ESV <- paste0(lib,"_RAGNAROC_final_dataset_ESV.tsv")
+    output_file_ESV <- paste0(experiment,"_RAGNAROC_final_dataset_ESV.tsv")
   }
 
   if (file.exists("summary_FREYJA.RData")) {
@@ -163,20 +170,20 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
   # MOTU/ESV + taxa info with LULU/without LULU
   # ESV within MOTU only available for ODIN_algorithm DnoisE_SWARM/SWARM_DnoisE
 
-  if (LOKI | file.exists(paste0(lib,"_LOKI_Curated.tsv"))) {
-    db <- read.csv(paste0(lib,"_LOKI_Curated.tsv"), sep="\t",head=T,stringsAsFactors = F)
+  if (LOKI || file.exists(paste0(experiment,"_LOKI_Curated.tsv"))) {
+    db <- read.csv(paste0(experiment,"_LOKI_Curated.tsv"), sep="\t",head=T,stringsAsFactors = F)
   } else {
-    db <- read.csv(paste0(lib,"_FRIGGA.tsv"), sep="\t",head=T,stringsAsFactors = F)
+    db <- read.csv(paste0(experiment,"_FRIGGA.tsv"), sep="\t",head=T,stringsAsFactors = F)
   }
   if (ESV_within_MOTU) {
-    ESV_data_initial <- read.csv(paste0(lib,"_ODIN_ESV.tsv"), sep="\t",head=T,stringsAsFactors = F)
+    ESV_data_initial <- read.csv(paste0(experiment,"_ODIN_ESV.tsv"), sep="\t",head=T,stringsAsFactors = F)
   }
 
   # Remove bacteria
   if (remove_bacteria) {
     message("RAGNAROC is removing bacterial MOTUs now.")
     bacteria_removed <- sum(c(db$superkingdom_name == "Prokaryota" | db$SCIENTIFIC_NAME == "root"),na.rm = T)
-    db <- db[(db$superkingdom_name != "Prokaryota" & db$SCIENTIFIC_NAME != "root"),]
+    db <- db[(!grepl('Prokaryota',db$superkingdom_name) & !grepl('Prokaryota',db$superkingdom_name)),]
   }
 
   # Remove contamination
@@ -192,7 +199,7 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
   }
 
   # Load the metadata_table
-  if (metadata_table=="") metadata_table <- paste0(lib,"_metadata.tsv")
+  if (metadata_table=="") metadata_table <- paste0(experiment,"_metadata.tsv")
   sample_db <- read.table(metadata_table,sep="\t",head=T,stringsAsFactors = F)
 
   message("data loaded")
@@ -204,7 +211,7 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
 
   # Select sample abundance columns
   sample_cols <- grep("sample",names(db))
-  initial_no_sample_cols <- length(sample_cols)
+  # initial_no_sample_cols <- length(sample_cols)
   sample_names <- names(db[sample_cols])
 
   # Change agnomens by original names 
@@ -218,17 +225,14 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
   # be done with the ESV, not with MOTUs
   if (!ESV_within_MOTU) {
     neg_samples <- db[,c(colnames(db) %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-    # neg_samples <- db[,sample_cols[grepl(paste0(sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)],collapse = "|"),new_sample_names)]]
   }
   
   # remove negs and empties
   db <- db[,!c(colnames(db) %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-  # db <- db[,-sample_cols[grepl(paste0(sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)],collapse = "|"),new_sample_names)]]
   db <- db[,!grepl("EMPTY",colnames(db))]
 
   # correct sample identifiers
   sample_names <- new_sample_names[!c(new_sample_names %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-  # sample_names <- new_sample_names[!grepl(paste0(sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)],collapse = "|"),new_sample_names)]
   sample_names <- sample_names[!grepl("EMPTY",sample_names)]
   sample_cols <- match(sample_names,colnames(db))
   sample_cols <- sample_cols[!is.na(sample_cols)]
@@ -245,24 +249,19 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
     names(ESV_data_initial)[sample_cols_ESV] <- new_sample_names_ESV
 
     neg_samples <- ESV_data_initial[,c(colnames(ESV_data_initial) %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-    # neg_samples <- ESV_data_initial[,sample_cols_ESV[grepl(paste0(sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)],collapse = "|"),new_sample_names_ESV)]]
     
     # remove neg samples
     if (dim(neg_samples)[2]>0) {
       # remove negs and empties
       ESV_data_initial <- ESV_data_initial[,!c(colnames(ESV_data_initial) %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-      # ESV_data_initial <- ESV_data_initial[,-sample_cols_ESV[grepl(paste0(sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)],collapse = "|"),new_sample_names_ESV)]]
       ESV_data_initial <- ESV_data_initial[,!grepl("EMPTY",colnames(ESV_data_initial))]
       # correct sample identifiers
       sample_names <- new_sample_names_ESV[!c(new_sample_names_ESV %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-      # sample_names <- new_sample_names_ESV[!grepl(paste0(sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)],collapse = "|"),new_sample_names_ESV)]
       sample_names_ESV <- new_sample_names[!grepl("EMPTY",new_sample_names)]
       sample_cols_ESV <- match(sample_names_ESV,colnames(ESV_data_initial))
       sample_cols_ESV <- sample_cols_ESV[!is.na(sample_cols_ESV)]
     }
   }
-
-  # db[1,"09_12_M2_A_C"] <- 10000000000000
   
   # Filter 1. remove any MOTU for which abundance in the blank or negative controls was higher than 10% of its total read abundance
   # remove blank and NEG samples
@@ -325,13 +324,13 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
     # remove numts
     if (remove_numts) {
       message("numts will be removed")
-      no_ESV_before_numts <- dim(ESV_data_initial)[1]
+      # no_ESV_before_numts <- dim(ESV_data_initial)[1]
       lengths <- nchar(as.vector(ESV_data_initial$NUC_SEQ))
       ESV_data_initial <- ESV_data_initial[(lengths-313)%%3 == 0,]
       lengths <- nchar(as.vector(ESV_data_initial$NUC_SEQ))
 
-      no_numts_data <- c()
-      numts_seqs <- c()
+      # no_numts_data <- c()
+      # numts_seqs <- c()
   
       number_of_motus <- length(unique(ESV_data_initial$MOTU))
       motu_taxa <- data.frame("id" = db$id, "Metazoa" = c(db$kingdom_name == "Metazoa" & !is.na(db$kingdom_name)))
@@ -405,7 +404,7 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
   }
   if (ODIN) {
     RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN was used to obtain meaningful units. In your case you chose the ",algorithm," algorithm.\n")
-    if (algorithm=="dnoise_swarm" | algorithm=="dnoise") {
+    if (algorithm=="dnoise_swarm" || algorithm=="dnoise") {
       RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN used DnoisE to obtain the ESV's of your samples running within them with the following options:\n")
       if (!is.logical(entropy)) {
         RAGNAROC_report <-  paste(RAGNAROC_report, "Entropy correction with sequences delimited to a multiple of 313bp, alpha",alpha,"and minimum number of reads of",min_reads_ESV,"\n")
@@ -443,10 +442,6 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
   if (remove_contamination) RAGNAROC_report <-  paste(RAGNAROC_report, "contaminations were removed\n")
   if (dim(neg_samples)[2]>0) RAGNAROC_report <-  paste(RAGNAROC_report, dim(data_neg_filt_deleted)[1],ifelse(ESV_within_MOTU," ESV"," MOTU")," were removed by neg/blank filter\n")
   RAGNAROC_report <-  paste(RAGNAROC_report, "The relative abundance filter of ",min_relative," within samples had effect on", dim(relabund_changed)[2],"id's\n")
-  # RAGNAROC_report <-  paste(RAGNAROC_report, "The relative abundance filter of ",min_relative," within samples had effect on the following id's and samples:\n")
-  # RAGNAROC_report <-  paste(c(RAGNAROC_report,paste(colnames(relabund_changed)),
-  #                             paste(apply(relabund_changed,1,paste0, collapse ="\t"), collapse = "\n"),
-  #                             "\n"))
   if (ESV_within_MOTU&remove_numts) RAGNAROC_report <-  paste(RAGNAROC_report, "The numts filter found",dim(numts_ESV)[1],"numts that were removed.\n")
   sink("RAGNAROC_summary_report.txt")
   cat(RAGNAROC_report)
@@ -456,8 +451,8 @@ mjolnir8_RAGNAROC <- function(lib,metadata_table="",output_file="",output_file_E
 compare.DNA <- function(x,y){
   as.integer(x) == as.integer(y)
 }
-numts<-function(datas, is_metazoa=FALSE, motu, datas_length)
-{
+
+numts<-function(datas, is_metazoa=FALSE, motu, datas_length) {
   suppressPackageStartupMessages(library(Biostrings))
   suppressPackageStartupMessages(library(stringr))
 
