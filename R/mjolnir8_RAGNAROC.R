@@ -183,7 +183,7 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
   if (remove_bacteria) {
     message("RAGNAROC is removing bacterial MOTUs now.")
     bacteria_removed <- sum(c(db$superkingdom_name == "Prokaryota" | db$SCIENTIFIC_NAME == "root"),na.rm = T)
-    db <- db[(db$superkingdom_name != "Prokaryota" & db$SCIENTIFIC_NAME != "root"),]
+    db <- db[(!grepl('Prokaryota',db$superkingdom_name) & !grepl('Prokaryota',db$superkingdom_name)),]
   }
 
   # Remove contamination
@@ -451,8 +451,8 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
 compare.DNA <- function(x,y){
   as.integer(x) == as.integer(y)
 }
-numts<-function(datas, is_metazoa=FALSE, motu, datas_length)
-{
+
+numts<-function(datas, is_metazoa=FALSE, motu, datas_length) {
   suppressPackageStartupMessages(library(Biostrings))
   suppressPackageStartupMessages(library(stringr))
 
