@@ -74,8 +74,9 @@ MJOLNIR3 depends on the following dependencies, which must be installed in the s
         source obi_completion_script.bash
         cd ..
         # installation of vsearch
-        git clone https://github.com/torognes/vsearch.git
-        cd vsearch
+        wget https://github.com/torognes/vsearch/archive/v2.26.1.tar.gz
+        tar xzf v2.26.1.tar.gz
+        cd vsearch-2.26.1
         ./autogen.sh
         ./configure CFLAGS="-O3" CXXFLAGS="-O3"
         make
