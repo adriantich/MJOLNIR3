@@ -89,8 +89,10 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
   if ('fastq_name_R1' %in% names(metadata)) {
     fastqR1_list <- metadata$fastq_name_R1
     agnomens <-  metadata$original_samples
+
+    cutadapt_command_primers <- c()
     for (j in seq_len(length(fastqR1_list))) {
-      R1_file <- fastqR1_list[j]
+      R1_file <- list.files(pattern = paste0("^", fastqR1_list[j]))
       R2_file <- gsub(R1_motif, R2_motif, R1_file)
       fwd_outfile <- paste0(agnomens[j],
                             R1_motif,
@@ -99,30 +101,31 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                             R2_motif,
                             ".fastq")
       if (R1_file == fwd_outfile) {
-        stop(paste("error: fastq_name_R1 and original_samples are the same. ",
+        stop(paste("error: fastq_name_R1 ->", R1_file, " and ",
+                   "original_samples ->", fwd_outfile, " are the same. ",
                    "Please consider changing one of them.",
                    "The ouput would be named as the input and in Valhalla we don't do that.",
                    "You can use .fastq.gz files as input instead."))
       }
       cutadapt_command_primers <- paste0(cutadapt_command_primers,
                                         "cutadapt -e 0.1 ", # allow 0.1 errors for primers in ngsfilter was total of 2
-                                        "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
+                                        # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                         " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                         "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                         " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                                         " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
-                                        "-g ^", primer_F, " -G ^", primer_R, # these are the sample_tags # nolint: line_length_linter.
+                                        "-g ", primer_F, " -G ", primer_R, # these are the sample_tags # for demultiplexed not anchored # nolint: line_length_linter.
                                         " -o ", fwd_outfile, " -p ", rev_outfile, # sample names as original # nolint: line_length_linter.
                                         " ", R1_file, " ", R2_file, " ; ") # input files # nolint: line_length_linter.
       if (primer_F != primer_R) {
         cutadapt_command_primers <- paste0(cutadapt_command_primers,
                                           "cutadapt -e 0.1 ", # allow 0.1 errors for primers in ngsfilter was total of 2
-                                          "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
+                                          # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                           " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                           "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                           " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                                           " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
-                                          "-g ^", primer_R, " -G ^", primer_F, # these are the sample_tags # nolint: line_length_linter.
+                                          "-g ", primer_R, " -G ", primer_F, # these are the sample_tags # nolint: line_length_linter.
                                           " -o temp_fileR1_rev.fastq -p temp_fileR2_fwd.fastq", # sample names as original # nolint: line_length_linter.
                                           " ", R1_file, " ", R2_file, " ; ",
                                           # now concatenate and remove
@@ -186,7 +189,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                         # " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                                         " --untrimmed-output ", R1_file_temp, # save those reads that have not been assigned to the sample # nolint: line_length_linter.
                                         " --untrimmed-paired-output ", R2_file_temp, # save those reads that have not been assigned to the sample # nolint: line_length_linter.
-                                        "--max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
+                                        " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
                                         "-g ", fwd_tag, " -G ", rev_tag, # these are the sample_tags # nolint: line_length_linter.
                                         " -o ", temp_file_R1, " -p ", temp_file_R2, # sample names as original # nolint: line_length_linter.
                                         " ", R1_file, " ", R2_file, " ; ") # input files # nolint: line_length_linter.
@@ -211,7 +214,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                           # " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                                           " --untrimmed-output ", R1_file_temp, # save those reads that have not been assigned to the sample # nolint: line_length_linter.
                                           " --untrimmed-paired-output ", R2_file_temp, # save those reads that have not been assigned to the sample # nolint: line_length_linter.
-                                          "--max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja
+                                          " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja
                                           "-g ", rev_tag, " -G ", fwd_tag, # these are the sample_tags
                                           " -o temp_fileR1.fastq -p temp_fileR2.fastq", # sample names as original
                                           " ", R1_file, " ", R2_file, " ; ",
@@ -231,7 +234,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
         for (j in seq_len(length(sample_num))) {
           cutadapt_command_primers <- paste0(cutadapt_command_primers,
                                             "cutadapt -e 0.1 ", # allow 0.1 errors for primers in ngsfilter was total of 2
-                                            "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
+                                            # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                             " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                             "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                             " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
@@ -242,7 +245,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
           if (fwd_tag != rev_tag) {
             cutadapt_command_primers <- paste0(cutadapt_command_primers,
                                               "cutadapt -e 0.1 ", # allow 0.1 errors for primers in ngsfilter was total of 2
-                                              "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
+                                              # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                               " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                               "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                               " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
