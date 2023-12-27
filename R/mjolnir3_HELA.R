@@ -62,17 +62,17 @@ mjolnir3_HELA <- function(experiment=NULL, lib=NULL, cores){
   for (i in sample_list) {
     X <- c(X, paste0("vsearch --uchime_denovo ", i, "_FREYJA_uniq.fasta ",
                      "--sizeout --minh 0.90 ",
-                     "--nonchimeras ", i, "_HELA_nonchimeras.fasta "))
+                     "--nonchimeras ", i, "_HELA.fasta "))
   }
   mclapply(X, function(x) system(x, intern = TRUE, wait = TRUE),
            mc.cores = cores)
 
   after_HELA <- mclapply(sample_list,function(file){
     output <- system(paste0("grep '>' ",
-                            file,"_HELA_nonchimeras.fasta | wc -l"),
+                            file,"_HELA.fasta | wc -l"),
                      intern = TRUE, wait = TRUE)
     value <- as.numeric(output)
-    return(data.frame(file=paste0(file,"_HELA_nonchimeras.fasta"),
+    return(data.frame(file=paste0(file,"_HELA.fasta"),
                       num_seqs=value))
   },mc.cores = cores)
   after_HELA <- do.call("rbind",after_HELA)
