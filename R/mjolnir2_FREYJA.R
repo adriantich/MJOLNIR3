@@ -8,11 +8,6 @@
 #' Input file fastq files are expected to be without primers sequence and all
 #' forward sequences in the R1 file and all reverse sequences in the R2 file.
 #'
-#' @param lib_prefix Character vector. Acronym for each sequencing library. This
-#' acronym must be of 4 characters in capital letters. Do not mix up library and
-#' experiment acronyms. The latter will be required in following steps. However
-#' they can be the same.
-#'
 #' @param experiment Character string. Acronym for the experiment. This
 #' acronym must be of 4 characters in capital letters. Do not mix up library and
 #' experiment acronyms. However they can be the same.
@@ -66,9 +61,9 @@
 #'              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 #'
 #' # Run FREYJA
-#' mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
+#' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
-mjolnir2_FREYJA <- function(lib_prefix="",experiment=NULL, lib=NULL,cores=1,Lmin=299,Lmax=320,score_obialign=40,
+mjolnir2_FREYJA <- function(experiment=NULL, lib=NULL,cores=1,Lmin=299,Lmax=320,score_obialign=40,
                             # demultiplexed=F,
                             # primer_F="GGWACWRGWTGRACWNTNTAYCCYCC",primer_R="TANACYTCNGGRTGNCCRAARAAYCA",
                             R1_motif="_R1",R2_motif="_R2",remove_DMS=T, run_on_tmp=F) {
