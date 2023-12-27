@@ -53,28 +53,38 @@ mjolnir3_HELA <- function(experiment=NULL, lib=NULL, cores){
     # Print deprecation warning
     warning("The 'lib' argument is deprecated. Please use 'experiment' instead.")
   }
-  sample_list <- gsub("_FREYJA_uniq.fasta","",list.files(pattern=paste0("^",experiment,"_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_FREYJA_uniq.fasta$")))
+  sample_list <- gsub("_FREYJA_uniq.fasta", "",
+                      list.files(pattern = paste0("^", experiment,
+                                                  "_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_FREYJA_uniq.fasta$")))
 
   message("HELA will remove chimaeras from each sample")
   X <- NULL
   for (i in sample_list) {
-    X <- c(X,paste0("vsearch --uchime_denovo ",i,"_FREYJA_uniq.fasta ",
-                    "--sizeout --minh 0.90 ",
-                    "--nonchimeras ",i,"_HELA_nonchimeras.fasta ",
-                    "--chimeras ",i,"_HELA_chimeras.fasta ",
-                    "--uchimeout ",i,"_HELA_uchimeout.log"))
+    X <- c(X, paste0("vsearch --uchime_denovo ", i, "_FREYJA_uniq.fasta ",
+                     "--sizeout --minh 0.90 ",
+                     "--nonchimeras ", i, "_HELA_nonchimeras.fasta "))
   }
-  mclapply(X, function(x) system(x,intern=T,wait=T), mc.cores = cores)
+  mclapply(X, function(x) system(x, intern = TRUE, wait = TRUE),
+           mc.cores = cores)
 
   after_HELA <- mclapply(sample_list,function(file){
-    output <- system(paste0("grep '>' ",file,"_HELA_nonchimeras.fasta | wc -l"),intern = T,wait = T)
+    output <- system(paste0("grep '>' ",
+                            file,"_HELA_nonchimeras.fasta | wc -l"),
+                     intern = TRUE, wait = TRUE)
     value <- as.numeric(output)
     return(data.frame(file=paste0(file,"_HELA_nonchimeras.fasta"),
                       num_seqs=value))
   },mc.cores = cores)
   after_HELA <- do.call("rbind",after_HELA)
+  report_HELA <- paste("HELA removed the chimeras with the uchime_denovo ",
+                       "algorithm and kept for each sample the following",
+                       "number of non-chimeras:\n",
+                       "sample\tsequences\n",
+                       paste(apply(after_HELA, 1, paste0, collapse = "\t"),
+                             collapse = "\n"),
+                       "\n")
 
-  save(file = "summary_HELA.RData",list = c("after_HELA"))
+  save(file = "summary_HELA.RData",list = c("after_HELA", "report_HELA"))
 
   message("HELA is done.")
 }
