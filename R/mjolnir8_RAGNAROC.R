@@ -55,6 +55,8 @@
 #' 
 #' @export 
 #' 
+#' @export 
+#' 
 #' @examples 
 #' library(mjolnir)
 #'
@@ -114,6 +116,7 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL, metadata_table="",
                               contamination_file="contaminants.txt",
                               ESV_within_MOTU=T,
                               remove_numts=F, cores=1){
+
   
   if (!is.null(lib) && is.null(experiment)) {
     # Use lib as experiment
@@ -395,6 +398,7 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL, metadata_table="",
 #' 
 #' @param datas_length Numeric vector. Vector with the number of characters in 
 #' each sequence
+
 
 numts<-function(datas, is_metazoa=FALSE, motu, datas_length) {
   suppressPackageStartupMessages(library(Biostrings))
