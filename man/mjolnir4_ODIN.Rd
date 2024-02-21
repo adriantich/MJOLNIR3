@@ -5,161 +5,245 @@
 \title{ODIN: OTU Delimitation Inferred by Networks}
 \usage{
 mjolnir4_ODIN(
-  lib,
+  experiment = NULL,
+  lib = NULL,
   cores,
   d = 13,
   min_reads_MOTU = 2,
   min_reads_ESV = 2,
-  alpha = 5,
+  min_relative = 1/50000,
+  blank_relative = 0.1,
+  metadata_table = "",
+  blank_col = "BLANK",
+  blank_tag = TRUE,
+  alpha = 4,
   entropy = c(0.47, 0.23, 1.02, 313),
   algorithm = "DnoisE_SWARM",
-  run_dnoise = T,
-  obipath = "",
-  python_packages = "",
-  swarmpath = NULL,
-  dnoise_path = NULL,
-  remove_singletons = TRUE,
-  remove_DMS = T
+  run_dnoise = TRUE,
+  remove_singletons = NULL,
+  remove_DMS = TRUE
 )
 }
 \arguments{
-\item{lib}{Character string. Acronym for the experiment. This
+\item{experiment}{Character string. Acronym for the experiment. This
 acronym must be of 4 characters in capital letters. Do not mix up library and
 experiment acronyms. However they can be the same.}
 
 \item{cores}{Numeric. Number of threads for parallel processing.}
 
-\item{d}{Numeric value for d parameter of SWARM that refers to the maximum 
+\item{d}{Numeric value for d parameter of SWARM that refers to the maximum
 number of differences between two sequences to be linked in the same cluster}
 
-\item{min_reads_MOTU}{Numeric. Minimum number of reads that a MOTU needs to 
+\item{min_reads_MOTU}{Numeric. Minimum number of reads that a MOTU needs to
 have to be retained.}
 
-\item{min_reads_ESV}{Numeric. Minimum number of reads that an ESV needs to 
-have to be retained.}
+\item{min_reads_ESV}{Numeric. Minimum number of reads that an ESV needs to
+have to be retained. Also works works for non-denoised sequences. In the
+case of algorithms involving SWARM, the removal is performed before SWARM.}
+
+\item{min_relative}{Number of the minimum relative abundance for a unit in the
+sample to be retained.}
+
+\item{blank_relative}{Relative abundance threshold for a unit to be removed if the 
+total abundance in the blank/neg/control is higher than this value in terms of
+relative abundance of the total reads in all samples (see Details).}
+
+\item{metadata_table}{tsv table. if not specified, the file must be named 
+<EXPX>_metadata.tsv. This table must have: a column named "mjolnir_agnomens"
+with the names given to the samples during the pipeline in FREYJA; a column 
+named "original_samples" with the samples names that will be given to the 
+samples at the end of the pipeline; and a column with the name specified in
+in the "blank_col" parameter ("BLANK" by default) where blanks, negatives and
+controls are tagged with a flag specified in the "blank_tag" parameter (T by
+default).}
+
+\item{blank_col}{Column name of the blank column in the "metadata_table"}
+
+\item{blank_tag}{Unique flag to tag the samples that are blank/neg/controls 
+in the "blank_col"}
 
 \item{alpha}{Numeric. Alpha value for DnoisE to run.}
 
 \item{entropy}{Logical, numeric or character vector specifying whether to run
-DnoisE with entropy correction and how. 
+DnoisE with entropy correction and how.
 
-a) c(0.47,0.23,1.02,313) - formulation refers to the entropy values for the 
-first, second and third position in the codon and the length of the main 
+a) c(0.47,0.23,1.02,313) - formulation refers to the entropy values for the
+first, second and third position in the codon and the length of the main
 sequence length expected. See Antich et al. 2022 for further details.
 
-b) FALSE - this will disable the entropy correction. Recommended for non 
+b) FALSE - this will disable the entropy correction. Recommended for non
 coding markers
 
-c) c("auto_sample",313) - this will compute the entropy values for 313 
+c) c("auto_sample",313) - this will compute the entropy values for 313
 (plus or minus multiple of 3) bp within DnoisE and use them to perform the entropy correction
 
-d) c("auto_dataset") - this will compute the entropy values for all the 
-dataset and all sequence lengths and use the main sequence length's values for 
+d) c("auto_dataset") - this will compute the entropy values for all the
+dataset and all sequence lengths and use the main sequence length's values for
 the entropy correction}
 
 \item{algorithm}{Character. It specifies the algorithm to obtain MOTUs and/or ESVs. Ther are four options:
 
-a)"DnoisE_SWARM" - This option will run DnoisE before SWARM. This option is the best 
-choice for highly diverse data sets so it will reduce the computation time of 
-SWARM. It also allows the analysis of metaphylogeographical approaches and 
-retrieves denoised and quality filter fasta files for each sample that can 
+a)"DnoisE_SWARM" - This option will run DnoisE before SWARM. This option is the best
+choice for highly diverse data sets so it will reduce the computation time of
+SWARM. It also allows the analysis of metaphylogeographical approaches and
+retrieves denoised and quality filter fasta files for each sample that can
 be used for other experiment without previous run of RAN, FREYJA and HELA. It
 will result on a table of MOTUs and the ESV clustered into them.
 
 b)"SWARM" - This option will run only SWARM to obtain a MOTU table.
 
-c)"SWARM_DnoisE" - This option will run SWARM before DnoisE. This option 
-responds to a philosophical point of view where the denoising of the 
-sequences have to be performed within MOTUs so closer sequences are compared 
-and to avoid that high abundant sequences from different MOTUs absorb 
-sequences (and thus their reads) from different MOTUs. However, there are no major 
-differences between this option and the "DnoisE_SWARM" option. It allows the 
-analysis of metaphylogeographical and will result on a table of MOTUs and 
+c)"SWARM_DnoisE" - This option will run SWARM before DnoisE. This option
+responds to a philosophical point of view where the denoising of the
+sequences have to be performed within MOTUs so closer sequences are compared
+and to avoid that high abundant sequences from different MOTUs absorb
+sequences (and thus their reads) from different MOTUs. However, there are no major
+differences between this option and the "DnoisE_SWARM" option. It allows the
+analysis of metaphylogeographical and will result on a table of MOTUs and
 the ESV clustered into them.
 
-d)"DnoisE" - This option will run only DnoisE. This option will retrieve 
-quality filter fasta files for each sample that can 
+d)"DnoisE" - This option will run only DnoisE. This option will retrieve
+quality filter fasta files for each sample that can
 be used for other experiment without previous run of RAN, FREYJA and HELA.}
 
 \item{run_dnoise}{Logical. In the case of the algorithm='DnoisE_SWARM' there is
 the option of not running the DnoisE if it has been already run for a previous
-experiment. The HELA_nonchimeras.fasta is needed anyway to have the information
-of the number of sequences that will be used by RAGNAROC for the final summary.}
-
-\item{obipath}{Character string specifying the PATH to the obi binary.}
-
-\item{python_packages}{Character string specifying the PATH to where the 
-Python3 packages are stored.}
-
-\item{swarmpath}{Character string specifying the PATH to the SWARM program.}
-
-\item{dnoise_path}{Character string specifying the PATH to the DnoisE program.}
-
-\item{remove_singletons}{Logical. If TRUE this will remove the sequences that,
-after dereplication when joining all samples (those will be denoised for when 
-algorithm="DnoisE_SWARM" or algorithm="DnoisE"), have only one read.}
+experiment. The denoised and filtered fasta files are needed.}
 
 \item{remove_DMS}{Logical. If TRUE, it will delete all obidms objects that are
-created during the process. This can save a lot of hard disk space. The FALSE 
+created during the process. This can save a lot of hard disk space. The FALSE
 option is useful for developing and debugging.}
 }
 \description{
 ODIN performs MOTU clustering and/or denoising. It is one of the main steps of MJOLNIR.
 }
 \details{
-The function mjolnir4_ODIN() uses the four different strategies to delimit 
-MOTUs and/or ESVs. This strategies are set with the algorithm parameter: 
-a)"DnoisE_SWARM", b)"SWARM", c)"SWARM_DnoisE" and d)"DnoisE". 
+The function mjolnir4_ODIN() uses the four different strategies to delimit
+MOTUs and/or ESVs. This strategies are set with the algorithm parameter:
 
-In short, DnoisE refers to the denoising process with DnoisE to obtain ESV 
-and SWARM to a clustering process with SWARM to obtain MOTUs. DnoisE is a 
-software to merge spurious sequences into their "mothers" (see Antich et al. 
-2022) to obtain Exact (also Amplicon) Sequence variants. DnoisE is an open 
-source and parallelizable alternative to Unoise that allows to introduce an 
-entropy correction based on the different entropies of each position in the 
-codon of coding genes. This is highly recommended for markers as COI for 
-which this program was intended. However, with the entropy=FALSE parameter, 
-this programs performs the same denoising procedure as described for Unoise3. 
-SWARM is an algorithm to delimit MOTUs, based on linkage-networks created by 
-step-by-step agregation. This clustering algorithm is not based on an 
-arbitrary, constant, absolute identity threshold. Conversely, SWARM is based 
-on an iterative aggregation of sequences that differ less than a given 
-distance d. This strategy results into linkage-networks of different sizes, 
-which can have different effective values for within-MOTU identity threshold, 
-depending on the complexity of the natural variability of the sequences 
-present in the sample. This procedure is very convenient in the case of 
-hypervariable metabarcoding markers, such as COI, which usually feature 
+a)"DnoisE_SWARM", b)"SWARM", c)"SWARM_DnoisE" and d)"DnoisE".
+
+In short, DnoisE refers to the denoising process with DnoisE to obtain ESV
+and SWARM to a clustering process with SWARM to obtain MOTUs. DnoisE is a
+software to merge spurious sequences into their "mothers" (see Antich et al.
+2022) to obtain Exact (also Amplicon) Sequence variants. DnoisE is an open
+source and parallelizable alternative to Unoise that allows to introduce an
+entropy correction based on the different entropies of each position in the
+codon of coding genes. This is highly recommended for markers as COI for
+which this program was intended. However, with the entropy=FALSE parameter,
+this programs performs the same denoising procedure as described for Unoise3.
+SWARM is an algorithm to delimit MOTUs, based on linkage-networks created by
+step-by-step agregation. This clustering algorithm is not based on an
+arbitrary, constant, absolute identity threshold. Conversely, SWARM is based
+on an iterative aggregation of sequences that differ less than a given
+distance d. This strategy results into linkage-networks of different sizes,
+which can have different effective values for within-MOTU identity threshold,
+depending on the complexity of the natural variability of the sequences
+present in the sample. This procedure is very convenient in the case of
+hypervariable metabarcoding markers, such as COI, which usually feature
 extremely high levels of natural diversity, in addition to the random sequencing errors.
-Dereplication step takes place after joining all samples into the same file 
+Dereplication step takes place after joining all samples into the same file
 before SWARM in algorithms a, b and c and after DnoisE in algorithms a and d
+
+NEW: now ODIN performs most of the filters that were applied in RAGNAROC. The
+idea is to retrieve an output file for each sample that is independent from the
+rest of the samples (blank and neg corrected; total reads filtered) and with
+denoised ASV/ESV using the name 
+
+"<mjolnir_agnoment>_ODIN_ESV_<original_name>.fasta.".
+
+To do so these are the the different steps of this function:
+
+<<D -> "DnoisE";
+
+DS -> "DnoisE_SWARM"
+
+S -> "SWARM";
+
+SD -> "SWARM_DnoisE";
+
+SaD (SWARM after DnoisE) --> "DnoisE_SWARM" & run_dnoise = F>>
+
+0: define variables and load metadata table
+
+1: D and DS -> denoise the fasta files
+
+2: D,DS,SD,S,SaD -> cat all fasta
+
+3: D,DS,SD,S,SaD -> dereplicate
+
+4: D,DS,SD,S,SaD -> annotate new names
+
+
+filter1A: D,DS -> blank relative abundances filter AS MOTU
+
+filter2A: D,DS -> min relative abundances filter WS ESV
+
+filter3A: D,DS -> remove nletons # improves SWARM for DS
+
+filter1B: SD,S,SaD -> remove nletons # this will improve SWARM performance
+                                     # apply this to SaD just in case
+
+5: D,DS,SD,S,SaD -> export csv file of sequences (if denoised, they are ESV)
+
+6: D,DS -> export fasta DnoisEd & blank filt
+
+7: D -> create fasta files for taxonomic assignment
+
+8: DS,SD,S,SaD -> do SWARM
+
+
+filter2B: SD,S -> blank relative abundances filter AS MOTU
+
+filter3B: SD,S -> min relative abundances filter WS MOTU
+
+filter4B: SD,S -> remove nletons AS MOTUs # remove artefacts
+
+
+9: DS,SD,S,SaD -> create csv files of MOTUs and ESV or seqs.
+
+10: DS,SD,S,SaD -> Also create fasta files for taxonomic assignment
+
+11: SD -> run DnoisE over the csv files
+
+Blank filter: remove any MOTU for which abundance in the blank or negative 
+controls is higher than "blank_relative" of its total read abundance
+and remove blank and NEG samples
+
+Minimum relative abundance filter: Apply a minimum relative abundance 
+threshold for each sample, setting to zero any abundance below "min_relative" 
+of the total reads of this sample. It also applies a "min_reads" filter
 }
 \examples{
 library(mjolnir)
 
 # Define input fastq files (only names of R1 files are needed)
-R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
+R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
+                  "ULO4_R1.fastq.gz")
 
-# Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
-lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
+# Input identifiers for the individual libraries to be used. 
+# It should be a 4-character name, matching the information in the 
+# ngsfilter files.
+lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
 
-# Enter number of cores to be used in parallel. 
+# experiment identifier
+experiment <- 'ULOY'
+# Enter number of cores to be used in parallel.
 cores <- 7
 
-# Run RAN
-mjolnir1_RAN(R1_filenames,cores,lib_prefixes,R1_motif="_R1",R2_motif="_R2")
-
-# set experiment acronym
-lib <- "ULOY"
+mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
+             cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 
 # Run FREYJA
-mjolnir2_FREYJA(lib_prefix = lib_prefixes,lib = lib,cores = cores,Lmin=299,Lmax=320)
-
-# set the maximum number of cores possible
-cores <- 16
+mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
-mjolnir3_HELA(lib,cores)
+mjolnir3_HELA(experiment, cores)
 
 # Run ODIN
-mjolnir4_ODIN(lib,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=5,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+mjolnir4_ODIN(experiment, cores, d = 13, 
+              min_reads_MOTU = 2, min_reads_ESV = 2,
+              min_relative = 1 / 50000, blank_relative = 0.1, 
+              metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
+              alpha = 4, entropy = c(0.47, 0.23, 1.02, 313), 
+              algorithm = "DnoisE_SWARM")
 }
