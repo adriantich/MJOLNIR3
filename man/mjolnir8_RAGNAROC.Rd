@@ -10,17 +10,13 @@ mjolnir8_RAGNAROC(
   metadata_table = "",
   output_file = "",
   output_file_ESV = "",
-  min_reads = 2,
-  min_relative = 1/50000,
+  min_reads = 0,
   remove_bacteria = T,
   remove_contamination = F,
   contamination_file = "contaminants.txt",
   ESV_within_MOTU = T,
-  blank_col = "BLANK",
-  blank_tag = T,
   remove_numts = F,
-  cores = 1,
-  blank_relative = 0.1
+  cores = 1
 )
 }
 \arguments{
@@ -45,9 +41,6 @@ for ESVs abundances if required.}
 \item{min_reads}{Number of the minimum number of reads allowed for each MOTU/ESV
 or ESV within MOTU.}
 
-\item{min_relative}{Number of the minimum relative abundance for a unit in the
-sample to be retained.}
-
 \item{remove_bacteria}{Logical. If TRUE it will apply the bacteria removal 
 filtering (see Details).}
 
@@ -60,19 +53,10 @@ filtering (see Details).}
 that were clustered into MOTUs in ODIN if algorithm was set to "DnoisE_SWARM" 
 or "SWARM_DnoisE" and apply all filters to both data.}
 
-\item{blank_col}{Column name of the blank column in the "metadata_table"}
-
-\item{blank_tag}{Unique flag to tag the samples that are blank/neg/controls 
-in the "blank_col"}
-
 \item{remove_numts}{Logical whether to apply the NUMT filter (TRUE) or not (FALSE)}
 
 \item{cores}{Numeric. Number of threads for parallel processing during NUMT 
 removal.}
-
-\item{blank_relative}{Relative abundance threshold for a unit to be removed if the 
-total abundance in the blank/neg/control is higher than this value in terms of
-relative abundance of the total reads in all samples (see Details).}
 }
 \description{
 Final step of the MJOLNIR3 pipeline to apply the last filters to the abundance data
@@ -85,14 +69,6 @@ Removal of Bacteria: this removed the Units tagged as "Prokaryota" or "root" in 
 
 Removal of contaminations: this step removes the taxa specified in the "contaminaion_file"
 
-Blank filter: remove any MOTU for which abundance in the blank or negative 
-controls is higher than "blank_relative" of its total read abundance
-and remove blank and NEG samples
-
-Minimum relative abundance filter: Apply a minimum relative abundance 
-threshold for each sample, setting to zero any abundance below "min_relative" 
-of the total reads of this sample. It also applies a "min_reads" filter
-
 NUMT removal: this step is design for the Leray-XT COI marker. It deletes all
 sequences that do not have a 313 (plus/minus multiple of 3 equivalent to a codon)
 bp length. Then removes sequences with stop codons and those metazoan 
@@ -102,43 +78,51 @@ sequences that do not translate for 5 specific conservative aminoacids.
 library(mjolnir)
 
 # Define input fastq files (only names of R1 files are needed)
-R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
+R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
+                  "ULO4_R1.fastq.gz")
 
-# Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
-lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
+# Input identifiers for the individual libraries to be used. 
+# It should be a 4-character name, matching the information in the 
+# ngsfilter files.
+lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
 
-# Enter number of cores to be used in parallel. 
+# experiment identifier
+experiment <- 'ULOY'
+# Enter number of cores to be used in parallel.
 cores <- 7
 
-# set experiment acronym
-experiment <- "ULOY"
-
-# Run RAN
 mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 
 # Run FREYJA
-mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
+mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
 mjolnir3_HELA(experiment, cores)
 
 # Run ODIN
-mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+mjolnir4_ODIN(experiment, cores, d = 13, 
+              min_reads_MOTU = 2, min_reads_ESV = 2,
+              min_relative = 1 / 50000, blank_relative = 0.1, 
+              metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
+              alpha = 4, entropy = c(0.47, 0.23, 1.02, 313), 
+              algorithm = "DnoisE_SWARM")
 
 # set the directory where the database is stored
 tax_dir <- "~/taxo_NCBI/"
 tax_dms_name <- "DUFA_COI"
 
 # Run THOR
-mjolnir5_THOR(experiment, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
+mjolnir5_THOR(experiment, cores, 
+              tax_dir = tax_dir, tax_dms_name = tax_dms_name,run_ecotag = T)
 
 # Run FRIGGA
 mjolnir6_FRIGGA(experiment)
 
 # Run LOKI
-mjolnir7_LOKI(experiment, min_id=.84)
+mjolnir7_LOKI(experiment, min_id = .84)
 
 # Run RAGNAROC
-mjolnir8_RAGNAROC(experiment,min_reads=2,min_relative=1/50000,remove_bacteria=T,remove_contamination=F,ESV_within_MOTU=T,blank_col="BLANK",blank_tag=T,remove_numts=F,cores=1,blank_relative=0.1)
+mjolnir8_RAGNAROC(experiment, remove_bacteria = T, ESV_within_MOTU = T,
+                  remove_numts = F, cores = 1)
 }

@@ -28,23 +28,24 @@ computing, significantly decreasing calculation times.
 library(mjolnir)
 
 # Define input fastq files (only names of R1 files are needed)
-R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
+R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
+                  "ULO4_R1.fastq.gz")
 
-# Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
-lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
+# Input identifiers for the individual libraries to be used. 
+# It should be a 4-character name, matching the information in the 
+# ngsfilter files.
+lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
 
+# experiment identifier
+experiment <- 'ULOY'
 # Enter number of cores to be used in parallel.
 cores <- 7
 
-# set experiment acronym
-experiment <- "ULOY"
-
-# Run RAN
 mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 
 # Run FREYJA
-mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
+mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
 mjolnir3_HELA(experiment, cores)

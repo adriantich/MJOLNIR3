@@ -5,15 +5,12 @@
 \title{FREYJA: Filtering of Reads, Enrollment, Yoke-reads Joining and Alignment}
 \usage{
 mjolnir2_FREYJA(
-  lib_prefix = "",
   experiment = NULL,
   lib = NULL,
   cores = 1,
   Lmin = 299,
   Lmax = 320,
   score_obialign = 40,
-  primer_F = "GGWACWRGWTGRACWNTNTAYCCYCC",
-  primer_R = "TANACYTCNGGRTGNCCRAARAAYCA",
   R1_motif = "_R1",
   R2_motif = "_R2",
   remove_DMS = T,
@@ -30,12 +27,6 @@ experiment acronyms. However they can be the same.}
 \item{Lmin}{Numeric. Minimum bp length for a sequence to be accepted.}
 
 \item{Lmax}{Numeric. Maximum bp length for a sequence to be accepted.}
-
-\item{primer_F}{Character string of the Forward primer. Necessary when
-demultiplexed=TRUE.}
-
-\item{primer_R}{Character string of the Reverse primer. Necessary when
-demultiplexed=TRUE.}
 
 \item{R1_motif}{Character string that distinguish the forward line file from
 the reverse.}
@@ -54,15 +45,6 @@ this method will consume much of the /tmp memory and it is recommended to have
 three to four times the memory available in the /tmp directory than the original
 forward files and remove_DMS=T}
 
-\item{lib_prefixes}{Character vector. Acronym for each sequencing library. This
-acronym must be of 4 characters in capital letters. Do not mix up library and
-experiment acronyms. The latter will be required in following steps. However
-they can be the same.}
-
-\item{fastq_ouput}{Logical. If TRUE, a fastq file for each sample with the
-demultiplexed and quality filtered sequences will be retrieved. This is useful
- if you wish to publish your data in public repositories.}
-
 \item{score_obilign}{Numeric. Minimum quality threshold to retain a sequence
 in the qualiy filtering after pairalignment.}
 }
@@ -72,36 +54,29 @@ sequences, filter by length, split sequences per sample and dereplicate
 within each sample.
 }
 \details{
-If samples were demultiplexed and RAN has not been used, FREYJA will read the
-names of each individual R1 fastq files from a column in the LIBX_metadata.tsv
-file, called fastq_name_R1. In the metadata table, each sample in the
-original_samples column must have a matching fastq_name_R1 and a matching
-mjolnir_agnomen (LIBX_sample_XXX).
-If the fastq_name_R1. column is not in the metadata, FREYJA will use the
-'original_samples' to search for the fastq files.
-In the actual version of MJOLNIR3 it is necessary to set primer_F and primer_R
-sequences in the options input to FREYJA. COI Leray-XT primers by default.
+Input file fastq files are expected to be without primers sequence and all
+forward sequences in the R1 file and all reverse sequences in the R2 file.
 }
 \examples{
 library(mjolnir)
 
 # Define input fastq files (only names of R1 files are needed)
-R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
+R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
+                  "ULO4_R1.fastq.gz")
 
 # Input identifiers for the individual libraries to be used. 
-# It should be a 4-character name, matching the information in the ngsfilter files
-lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
+# It should be a 4-character name, matching the information in the 
+# ngsfilter files.
+lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
 
+# experiment identifier
+experiment <- 'ULOY'
 # Enter number of cores to be used in parallel.
 cores <- 7
 
-# set experiment acronym
-experiment <- "ULOY"
-
-# Run RAN
 mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 
 # Run FREYJA
-mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
+mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 }

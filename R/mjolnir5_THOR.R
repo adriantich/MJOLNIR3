@@ -45,38 +45,45 @@
 #' 
 #' @examples 
 #' library(mjolnir)
-#' 
+#'
 #' # Define input fastq files (only names of R1 files are needed)
-#' R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
-#' 
-#' # Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
-#' lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
-#' 
-#' # Enter number of cores to be used in parallel. 
+#' R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
+#'                   "ULO4_R1.fastq.gz")
+#'
+#' # Input identifiers for the individual libraries to be used. 
+#' # It should be a 4-character name, matching the information in the 
+#' # ngsfilter files.
+#' lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
+#'
+#' # experiment identifier
+#' experiment <- 'ULOY'
+#' # Enter number of cores to be used in parallel.
 #' cores <- 7
-#' 
-#' # set experiment acronym
-#' experiment <- "ULOY"
-#' 
-#' # Run RAN
+#'
 #' mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
 #'              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
-#' 
+#'
 #' # Run FREYJA
-#' mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
-#' 
+#' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
+#'
 #' # Run HELA
 #' mjolnir3_HELA(experiment, cores)
-#' 
+#'
 #' # Run ODIN
-#' mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+#' mjolnir4_ODIN(experiment, cores, d = 13, 
+#'               min_reads_MOTU = 2, min_reads_ESV = 2,
+#'               min_relative = 1 / 50000, blank_relative = 0.1, 
+#'               metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
+#'               alpha = 4, entropy = c(0.47, 0.23, 1.02, 313), 
+#'               algorithm = "DnoisE_SWARM")
 #' 
 #' # set the directory where the database is stored
 #' tax_dir <- "~/taxo_NCBI/"
 #' tax_dms_name <- "DUFA_COI"
 #' 
 #' # Run THOR
-#' mjolnir5_THOR(experiment, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
+#' mjolnir5_THOR(experiment, cores, 
+#'               tax_dir = tax_dir, tax_dms_name = tax_dms_name,run_ecotag = T)
 
 mjolnir5_THOR <- function(experiment=NULL, lib=NULL,cores,
                           tax_dir=".",tax_dms_name=NULL,tax_db=NULL,
@@ -96,6 +103,32 @@ mjolnir5_THOR <- function(experiment=NULL, lib=NULL,cores,
 
   tax_db_dir <- normalizePath(dirname(tax_db))
   tax_db_name <- basename(tax_db)
+
+  if (cores > 1) {
+    message("THOR will use ", cores, " cores for parallel processing.")
+    fasta_file <- readLines(paste0(experiment,"_ODIN.fasta"))
+
+    seqs <- grep(">",fasta_file)
+    seq_rank <- sort(seqs %% cores)
+
+    for (i in 1:cores) {
+      if (i == 1) {
+        start_line <- 1
+        end_line <- seqs[grep(unique(seq_rank)[i+1],seq_rank)[1]]-1
+      } else if (i == cores) {
+        start_line <- seqs[grep(unique(seq_rank)[i],seq_rank)[1]]
+        end_line <- length(fasta_file)
+      } else {
+        start_line <- seqs[grep(unique(seq_rank)[i],seq_rank)[1]]
+        end_line <- seqs[grep(unique(seq_rank)[i+1],seq_rank)[1]]-1
+      }
+      writeLines(paste0(fasta_file[start_line:end_line],
+                        collapse = "\n"),
+                  paste0(experiment, "_THOR_pretaxa_part_",sprintf("%02d",i),".fasta"))
+      }
+  } else {
+    message("THOR will use 1 core for processing.")
+  }
 
 
   if (!vsearch) {
@@ -127,9 +160,14 @@ mjolnir5_THOR <- function(experiment=NULL, lib=NULL,cores,
       X <- NULL
       create_dirs <- NULL
       for (i in 1:cores) {
+        if (cores == 1) {
+          fasta_file_name <- paste0(experiment,"_ODIN.fasta")
+        } else {
+          fasta_file_name <- paste0(experiment, "_THOR_pretaxa_part_",sprintf("%02d",i),".fasta")
+        }
         create_dirs <- c(create_dirs,paste0("mkdir ",experiment, "_THOR_",sprintf("%02d",i)," ; cp -r ",tax_dir,"/",tax_dms_name,".obidms ",experiment, "_THOR_",sprintf("%02d",i),"/. ; "))
         X <- c(X,paste0("cd ",experiment, "_THOR_",sprintf("%02d",i)," ; ",
-                        "obi import --fasta-input ../",experiment,"_ODIN_part_",sprintf("%02d",i),".fasta ",tax_dms_name,"/seqs ; ",
+                        "obi import --fasta-input ../",fasta_file_name, " ",tax_dms_name,"/seqs ; ",
                         "obi ecotag -c ",minimum_circle," --taxonomy ",tax_dms_name,"/taxonomy/my_tax -R ",tax_dms_name,"/ref_db ",tax_dms_name,"/seqs ",tax_dms_name,"/assigned_seqs ; ",
                         "obi annotate --taxonomy ",tax_dms_name,"/taxonomy/my_tax ",
                         " --with-taxon-at-rank superkingdom ",

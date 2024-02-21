@@ -57,10 +57,13 @@
 #' library(mjolnir)
 #'
 #' # Define input fastq files (only names of R1 files are needed)
-#' R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
+#' R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
+#'                   "ULO4_R1.fastq.gz")
 #'
-#' # Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
-#' lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
+#' # Input identifiers for the individual libraries to be used. 
+#' # It should be a 4-character name, matching the information in the 
+#' # ngsfilter files.
+#' lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
 #'
 #' # experiment identifier
 #' experiment <- 'ULOY'
@@ -239,7 +242,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                             "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                             " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                                             " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
-                                            "-g ^", fwd_primer[j], " -G ^", rev_primer[j], # these are the sample_tags # nolint: line_length_linter.
+                                            "-g ", fwd_primer[j], " -G ", rev_primer[j], # these are the sample_tags # nolint: line_length_linter.
                                             " -o ", fwd_outfile[j], " -p ", rev_outfile[j], # sample names as original # nolint: line_length_linter.
                                             " ", temp_file_R1, " ", temp_file_R2, " ; ") # input files # nolint: line_length_linter.
           if (fwd_tag != rev_tag) {
@@ -250,7 +253,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                               "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                               " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                                               " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
-                                              "-g ^", rev_primer[j], " -G ^", fwd_primer[j], # these are the sample_tags # nolint: line_length_linter.
+                                              "-g ", rev_primer[j], " -G ", fwd_primer[j], # these are the sample_tags # nolint: line_length_linter.
                                               " -o temp_fileR1_rev.fastq -p temp_fileR2_fwd.fastq", # sample names as original # nolint: line_length_linter.
                                               " ", temp_file_R1, " ", temp_file_R2, " ; ",
                                               # now concatenate and remove

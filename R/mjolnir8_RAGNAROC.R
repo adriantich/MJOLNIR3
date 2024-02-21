@@ -10,14 +10,6 @@
 #' 
 #' Removal of contaminations: this step removes the taxa specified in the "contaminaion_file"
 #' 
-#' Blank filter: remove any MOTU for which abundance in the blank or negative 
-#' controls is higher than "blank_relative" of its total read abundance
-#' and remove blank and NEG samples
-#' 
-#' Minimum relative abundance filter: Apply a minimum relative abundance 
-#' threshold for each sample, setting to zero any abundance below "min_relative" 
-#' of the total reads of this sample. It also applies a "min_reads" filter
-#' 
 #' NUMT removal: this step is design for the Leray-XT COI marker. It deletes all
 #' sequences that do not have a 313 (plus/minus multiple of 3 equivalent to a codon)
 #' bp length. Then removes sequences with stop codons and those metazoan 
@@ -43,10 +35,7 @@
 #' 
 #' @param min_reads Number of the minimum number of reads allowed for each MOTU/ESV
 #' or ESV within MOTU.
-#' 
-#' @param min_relative Number of the minimum relative abundance for a unit in the
-#' sample to be retained.
-#' 
+#'  
 #' @param remove_bacteria Logical. If TRUE it will apply the bacteria removal 
 #' filtering (see Details).
 #' 
@@ -59,69 +48,72 @@
 #' that were clustered into MOTUs in ODIN if algorithm was set to "DnoisE_SWARM" 
 #' or "SWARM_DnoisE" and apply all filters to both data.
 #' 
-#' @param blank_col Column name of the blank column in the "metadata_table"
-#' 
-#' @param blank_tag Unique flag to tag the samples that are blank/neg/controls 
-#' in the "blank_col"
-#' 
 #' @param remove_numts Logical whether to apply the NUMT filter (TRUE) or not (FALSE)
 #' 
 #' @param cores Numeric. Number of threads for parallel processing during NUMT 
 #' removal.
 #' 
-#' @param blank_relative Relative abundance threshold for a unit to be removed if the 
-#' total abundance in the blank/neg/control is higher than this value in terms of
-#' relative abundance of the total reads in all samples (see Details).
-#' 
 #' @export 
 #' 
 #' @examples 
 #' library(mjolnir)
-#' 
+#'
 #' # Define input fastq files (only names of R1 files are needed)
-#' R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
-#' 
-#' # Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
-#' lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
-#' 
-#' # Enter number of cores to be used in parallel. 
+#' R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
+#'                   "ULO4_R1.fastq.gz")
+#'
+#' # Input identifiers for the individual libraries to be used. 
+#' # It should be a 4-character name, matching the information in the 
+#' # ngsfilter files.
+#' lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
+#'
+#' # experiment identifier
+#' experiment <- 'ULOY'
+#' # Enter number of cores to be used in parallel.
 #' cores <- 7
-#' 
-#' # set experiment acronym
-#' experiment <- "ULOY"
-#' 
-#' # Run RAN
+#'
 #' mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
 #'              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
-#' 
+#'
 #' # Run FREYJA
-#' mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
-#' 
+#' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
+#'
 #' # Run HELA
 #' mjolnir3_HELA(experiment, cores)
-#' 
+#'
 #' # Run ODIN
-#' mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+#' mjolnir4_ODIN(experiment, cores, d = 13, 
+#'               min_reads_MOTU = 2, min_reads_ESV = 2,
+#'               min_relative = 1 / 50000, blank_relative = 0.1, 
+#'               metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
+#'               alpha = 4, entropy = c(0.47, 0.23, 1.02, 313), 
+#'               algorithm = "DnoisE_SWARM")
 #' 
 #' # set the directory where the database is stored
 #' tax_dir <- "~/taxo_NCBI/"
 #' tax_dms_name <- "DUFA_COI"
 #' 
 #' # Run THOR
-#' mjolnir5_THOR(experiment, cores, tax_dir=tax_dir, tax_dms_name=tax_dms_name, run_ecotag=T)
+#' mjolnir5_THOR(experiment, cores, 
+#'               tax_dir = tax_dir, tax_dms_name = tax_dms_name,run_ecotag = T)
 #' 
 #' # Run FRIGGA
 #' mjolnir6_FRIGGA(experiment)
 #' 
 #' # Run LOKI
-#' mjolnir7_LOKI(experiment, min_id=.84)
+#' mjolnir7_LOKI(experiment, min_id = .84)
 #' 
 #' # Run RAGNAROC
-#' mjolnir8_RAGNAROC(experiment,min_reads=2,min_relative=1/50000,remove_bacteria=T,remove_contamination=F,ESV_within_MOTU=T,blank_col="BLANK",blank_tag=T,remove_numts=F,cores=1,blank_relative=0.1)
+#' mjolnir8_RAGNAROC(experiment, remove_bacteria = T, ESV_within_MOTU = T,
+#'                   remove_numts = F, cores = 1)
 
-mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output_file="",output_file_ESV="",min_reads=2,min_relative=1/50000,
-                              remove_bacteria=T,remove_contamination=F,contamination_file="contaminants.txt",
-                              ESV_within_MOTU=T,blank_col="BLANK",blank_tag=T,remove_numts=F,cores=1,blank_relative=0.1){
+mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL, metadata_table="",
+                              output_file="", output_file_ESV="",
+                              min_reads=0, remove_bacteria=T,
+                              remove_contamination=F,
+                              contamination_file="contaminants.txt",
+                              ESV_within_MOTU=T,
+                              remove_numts=F, cores=1){
   
   if (!is.null(lib) && is.null(experiment)) {
     # Use lib as experiment
@@ -221,18 +213,8 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
   new_sample_names[is.na(new_sample_names)] <- gsub("^","EMPTY",as.character(c(1:sum(is.na(new_sample_names)))))
   colnames(db)[sample_cols] <- new_sample_names
 
-  # get negatives/blanks from MOTUs if not ESV_within_MOTU so the filter will 
-  # be done with the ESV, not with MOTUs
-  if (!ESV_within_MOTU) {
-    neg_samples <- db[,c(colnames(db) %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-  }
-  
-  # remove negs and empties
-  db <- db[,!c(colnames(db) %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
   db <- db[,!grepl("EMPTY",colnames(db))]
 
-  # correct sample identifiers
-  sample_names <- new_sample_names[!c(new_sample_names %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
   sample_names <- sample_names[!grepl("EMPTY",sample_names)]
   sample_cols <- match(sample_names,colnames(db))
   sample_cols <- sample_cols[!is.na(sample_cols)]
@@ -247,74 +229,17 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
     new_sample_names_ESV <- sample_db$original_samples[match(sample_names_ESV,sample_db$mjolnir_agnomens)]
     new_sample_names_ESV[is.na(new_sample_names_ESV)] <- gsub("^","EMPTY",as.character(c(1:sum(is.na(new_sample_names_ESV)))))
     names(ESV_data_initial)[sample_cols_ESV] <- new_sample_names_ESV
-
-    neg_samples <- ESV_data_initial[,c(colnames(ESV_data_initial) %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-    
-    # remove neg samples
-    if (dim(neg_samples)[2]>0) {
-      # remove negs and empties
-      ESV_data_initial <- ESV_data_initial[,!c(colnames(ESV_data_initial) %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-      ESV_data_initial <- ESV_data_initial[,!grepl("EMPTY",colnames(ESV_data_initial))]
-      # correct sample identifiers
-      sample_names <- new_sample_names_ESV[!c(new_sample_names_ESV %in% sample_db$original_samples[as.character(sample_db[,blank_col])==as.character(blank_tag)])]
-      sample_names_ESV <- new_sample_names[!grepl("EMPTY",new_sample_names)]
-      sample_cols_ESV <- match(sample_names_ESV,colnames(ESV_data_initial))
-      sample_cols_ESV <- sample_cols_ESV[!is.na(sample_cols_ESV)]
-    }
   }
   
-  # Filter 1. remove any MOTU for which abundance in the blank or negative controls was higher than 10% of its total read abundance
-  # remove blank and NEG samples
-  if (dim(neg_samples)[2]>0) {
-    message("RAGNAROC will remove any MOTU for which abundance in the blank or negative controls was higher than 10% of its total read abundance")
-    message("The samples used in this steps as blanks are: ", paste(colnames(neg_samples),collapse = ', '))
-    neg_reads <- rowSums(neg_samples)
-    if (!ESV_within_MOTU) {
-      sample_reads <- rowSums(db[,sample_cols])
-      data_neg_filt_deleted <- db[neg_reads/(sample_reads+neg_reads) > blank_relative,]
-      db <- db[!neg_reads/(sample_reads+neg_reads) > blank_relative,]
-    } else {
-      sample_reads <- rowSums(ESV_data_initial[,sample_cols_ESV])
-      data_neg_filt_deleted <- ESV_data_initial[neg_reads/(sample_reads+neg_reads) > blank_relative,]
-      ESV_data_initial <- ESV_data_initial[!neg_reads/(sample_reads+neg_reads) > blank_relative,]
-      db <- db[db$id %in% unique(ESV_data_initial$MOTU),]
-    }
-    message("Blank correction finished")
-  }
-
-  # Filter 2. Apply a minimum relative abundance threshold for each sample, setting to zero any abundance below min_relative of the total reads of this sample
-  # it also applies a min_reads filter
-  message("RAGNAROC is applying a relative abundance filter. MOTUs with less than ",min_relative," relative abundance will be removed from each sample.")
-
-  relabund <- function(x,min_relative) if (sum(x)>0) x/sum(x) < min_relative else FALSE
   if (!ESV_within_MOTU) {
     rownames(db) <- db$id
 
-    change_matrix <- do.call("cbind",apply(db[,sample_cols], 2, relabund, min_relative=min_relative)) & db[,sample_cols]>0
-
-    relabund_changed <- data.frame(id_modified = rownames(change_matrix[rowSums(change_matrix)>0,]),
-                                   samples = vapply(rownames(change_matrix[rowSums(change_matrix)>0,]), function(x,change_matrix){
-                                     return(paste(colnames(change_matrix)[change_matrix[rownames(change_matrix)==x,]]))
-                                   }, FUN.VALUE = "string", change_matrix = change_matrix))
-    db[,sample_cols][change_matrix] <- 0
     db$COUNT <- rowSums(db[,sample_cols])
-    message("Filter of minimum relative abundance finished")
+
     message("RAGNAROC is removing MOTUs with less than ",min_reads," total reads.")
     db <- db[db$COUNT >= min_reads,]
   } else {
     rownames(ESV_data_initial) <- ESV_data_initial$ID
-    
-    change_matrix <- apply(ESV_data_initial[,sample_cols_ESV], 2, relabund, min_relative=min_relative)
-    if (!is.array(change_matrix)) {
-      change_matrix <- do.call("cbind",change_matrix)
-    }
-    change_matrix <- change_matrix & ESV_data_initial[,sample_cols_ESV]>0
-
-    relabund_changed <- data.frame(ESV_id_modified = rownames(change_matrix[rowSums(change_matrix)>0,]),
-                                   samples = vapply(rownames(change_matrix[rowSums(change_matrix)>0,]), function(x,change_matrix){
-                                     return(paste(colnames(change_matrix)[change_matrix[rownames(change_matrix)==x,]],collapse = "|"))
-                                   }, FUN.VALUE = "string", change_matrix = change_matrix))
-    ESV_data_initial[,sample_cols_ESV][change_matrix] <- 0
 
     ESV_data_initial$COUNT <- rowSums(ESV_data_initial[,sample_cols_ESV])
 
@@ -369,92 +294,115 @@ mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL,metadata_table="",output
   #####
   # RAGNAROC REPORT
   #####
-  RAGNAROC_report <- paste("Dear friend,\n",
-             "you have succesfully arrived at the end of RAGNAROC. You've meet gods and took their help to twist the data to your will.\n",
-             "After RAGNAROC the rest is up to you. Don't lose the faith in your experiment, the end is near but new paths will open below your feet.\n",
-             "Please don't forget to cite and thank the two dwarfs Cindri and Brok, AKA Owen and Adria, for the forge of my self.\n",
-             "MJOLNIR.\n",
-             "P.S.: See below for a small summary of your journey.\n")
-  if (FREYJA) {
-    if (as.logical(variables_FREYJA["demultiplexed",2])) {
-      RAGNAROC_report <- paste(RAGNAROC_report, "You started FREYJA with your samples allready demultiplexed and with the following sequences for each file \n")
-      do.call("rbind",before_FREYJA)
-    } else{
-      RAGNAROC_report <- paste(RAGNAROC_report, "You started FREYJA with the following sequences for each file \n")
-      RAGNAROC_report <- paste0(RAGNAROC_report,paste(apply(do.call("rbind",lapply(before_FREYJA,function(x)do.call("rbind",x))),1,paste, collapse =" : "), collapse = "\n"),"\n")
-    }
-    RAGNAROC_report <-  paste(RAGNAROC_report, "You used",variables_FREYJA["cores",2]," cores to aling your sequences. You choosed those sequences with a quality score of more than",variables_FREYJA["score_obialign",2],".\n",
-               "You assign each sequence to a sample name and removed the primer's sequences.\n",
-               "Finally in FREYJA you just kept those sequences with A, G, T or C's and with a sequence length between",variables_FREYJA["Lmin",2],"and",variables_FREYJA["Lmax",2],"bp.\n",
-               "The resulting files had the following stats:\n")
-    RAGNAROC_report <- paste0(RAGNAROC_report,"sample\tfiltered sequences\tuniq sequences\n",
-                              paste(apply(as.data.frame(pivot_wider(do.call("rbind",after_FREYJA),names_from = "version",values_from = "num_seqs")),1,paste0, collapse ="\t"), collapse = "\n"),
-                              "\n")
-  } else {
-    RAGNAROC_report <-  paste(RAGNAROC_report, "Sorry but I couldn't find a summary of your FREYJA process \n")
-  }
-  if (HELA) {
-    RAGNAROC_report <-  paste(RAGNAROC_report, "HELA removed the chimeras with the uchime_denovo algorithm and kept for each sample the following number of non-chimeras:\n")
-    RAGNAROC_report <-  paste0(RAGNAROC_report,"sample\tsequences\n",
-                               paste(apply(after_HELA,1,paste0, collapse ="\t"), collapse = "\n"),
-                               "\n")
-    
-  } else {
-    RAGNAROC_report <-  paste(RAGNAROC_report, "Sorry but I couldn't find a summary of your HELA process \n")
-  }
-  if (ODIN) {
-    RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN was used to obtain meaningful units. In your case you chose the ",algorithm," algorithm.\n")
-    if (algorithm=="dnoise_swarm" || algorithm=="dnoise") {
-      RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN used DnoisE to obtain the ESV's of your samples running within them with the following options:\n")
-      if (!is.logical(entropy)) {
-        RAGNAROC_report <-  paste(RAGNAROC_report, "Entropy correction with sequences delimited to a multiple of 313bp, alpha",alpha,"and minimum number of reads of",min_reads_ESV,"\n")
-      } else {
-        RAGNAROC_report <-  paste(RAGNAROC_report, "Alpha",alpha,"and minimum number of reads of",min_reads_ESV,"\n")
-      }
-    }
-    if (algorithm=="dnoise_swarm"  | algorithm=="swarm" | algorithm=="swarm_dnoise") {
-      if (exists("after_2_ODIN")&exists("after_4a_ODIN")) {
-        RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN joined all the sequences, obtained the unique ones and applied swarm to obtain the MOTUs. Before SWARM you had",after_2_ODIN$values[after_2_ODIN$version=="seq_id"],"sequences and at the end you obtained the following stats: \n")
-      }
-    } else{
-      if (exists("after_2_ODIN")) {
-        RAGNAROC_report <-  paste(RAGNAROC_report, "The samples were then grouped and the unique sequences obtained being",after_2_ODIN$values[after_2_ODIN$version=="seq_id"],"sequences in total.\n")
-      }
-    }
-    if (algorithm=="swarm_dnoise") {
-      RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN used DnoisE to obtain the ESV's of your samples running within them with the following options:\n")
-      if (run_entropy) {
-        RAGNAROC_report <-  paste(RAGNAROC_report, "Entropy correction (",entropy,"), alpha ",alpha," and minimum number of reads of ",min_reads_ESV,"\n")
-      } else {
-        RAGNAROC_report <-  paste(RAGNAROC_report, "Alpha ",alpha," and minimum number of reads of ",min_reads_ESV,"\n")
-      }
-    }
-  } else {
-    RAGNAROC_report <-  paste(RAGNAROC_report, "Sorry but I couldn't find a summary of your ODIN process \n")
-  }
-  if (LOKI) {
-    RAGNAROC_report <-  paste(RAGNAROC_report, "LOKI used LULU to search for potential pseudogenes and found ",num_discarded," OTUs that were discarded.\n")
-  } else {
-    RAGNAROC_report <-  paste(RAGNAROC_report, "Sorry but I couldn't find a summary of your LOKI process\n")
-  }
-  RAGNAROC_report <-  paste(RAGNAROC_report, "During RAGNAROC some filters were applied.\n")
-  if (remove_bacteria) RAGNAROC_report <-  paste(RAGNAROC_report, bacteria_removed," bacteria were removed\n")
-  if (remove_contamination) RAGNAROC_report <-  paste(RAGNAROC_report, "contaminations were removed\n")
-  if (dim(neg_samples)[2]>0) RAGNAROC_report <-  paste(RAGNAROC_report, dim(data_neg_filt_deleted)[1],ifelse(ESV_within_MOTU," ESV"," MOTU")," were removed by neg/blank filter\n")
-  RAGNAROC_report <-  paste(RAGNAROC_report, "The relative abundance filter of ",min_relative," within samples had effect on", dim(relabund_changed)[2],"id's\n")
-  if (ESV_within_MOTU&remove_numts) RAGNAROC_report <-  paste(RAGNAROC_report, "The numts filter found",dim(numts_ESV)[1],"numts that were removed.\n")
-  sink("RAGNAROC_summary_report.txt")
-  cat(RAGNAROC_report)
-  sink()
+  # RAGNAROC_report <- paste("Dear friend,\n",
+  #            "you have succesfully arrived at the end of RAGNAROC. You've meet gods and took their help to twist the data to your will.\n",
+  #            "After RAGNAROC the rest is up to you. Don't lose the faith in your experiment, the end is near but new paths will open below your feet.\n",
+  #            "Please don't forget to cite and thank the two dwarfs Cindri and Brok, AKA Owen and Adria, for the forge of my self.\n",
+  #            "MJOLNIR.\n",
+  #            "P.S.: See below for a small summary of your journey.\n")
+  # if (FREYJA) {
+  #   if (as.logical(variables_FREYJA["demultiplexed",2])) {
+  #     RAGNAROC_report <- paste(RAGNAROC_report, "You started FREYJA with your samples allready demultiplexed and with the following sequences for each file \n")
+  #     do.call("rbind",before_FREYJA)
+  #   } else{
+  #     RAGNAROC_report <- paste(RAGNAROC_report, "You started FREYJA with the following sequences for each file \n")
+  #     RAGNAROC_report <- paste0(RAGNAROC_report,paste(apply(do.call("rbind",lapply(before_FREYJA,function(x)do.call("rbind",x))),1,paste, collapse =" : "), collapse = "\n"),"\n")
+  #   }
+  #   RAGNAROC_report <-  paste(RAGNAROC_report, "You used",variables_FREYJA["cores",2]," cores to aling your sequences. You choosed those sequences with a quality score of more than",variables_FREYJA["score_obialign",2],".\n",
+  #              "You assign each sequence to a sample name and removed the primer's sequences.\n",
+  #              "Finally in FREYJA you just kept those sequences with A, G, T or C's and with a sequence length between",variables_FREYJA["Lmin",2],"and",variables_FREYJA["Lmax",2],"bp.\n",
+  #              "The resulting files had the following stats:\n")
+  #   RAGNAROC_report <- paste0(RAGNAROC_report,"sample\tfiltered sequences\tuniq sequences\n",
+  #                             paste(apply(as.data.frame(pivot_wider(do.call("rbind",after_FREYJA),names_from = "version",values_from = "num_seqs")),1,paste0, collapse ="\t"), collapse = "\n"),
+  #                             "\n")
+  # } else {
+  #   RAGNAROC_report <-  paste(RAGNAROC_report, "Sorry but I couldn't find a summary of your FREYJA process \n")
+  # }
+  # if (HELA) {
+  #   RAGNAROC_report <-  paste(RAGNAROC_report, "HELA removed the chimeras with the uchime_denovo algorithm and kept for each sample the following number of non-chimeras:\n")
+  #   RAGNAROC_report <-  paste0(RAGNAROC_report,"sample\tsequences\n",
+  #                              paste(apply(after_HELA,1,paste0, collapse ="\t"), collapse = "\n"),
+  #                              "\n")
+  #   
+  # } else {
+  #   RAGNAROC_report <-  paste(RAGNAROC_report, "Sorry but I couldn't find a summary of your HELA process \n")
+  # }
+  # if (ODIN) {
+  #   RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN was used to obtain meaningful units. In your case you chose the ",algorithm," algorithm.\n")
+  #   if (algorithm=="dnoise_swarm" || algorithm=="dnoise") {
+  #     RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN used DnoisE to obtain the ESV's of your samples running within them with the following options:\n")
+  #     if (!is.logical(entropy)) {
+  #       RAGNAROC_report <-  paste(RAGNAROC_report, "Entropy correction with sequences delimited to a multiple of 313bp, alpha",alpha,"and minimum number of reads of",min_reads_ESV,"\n")
+  #     } else {
+  #       RAGNAROC_report <-  paste(RAGNAROC_report, "Alpha",alpha,"and minimum number of reads of",min_reads_ESV,"\n")
+  #     }
+  #   }
+  #   if (algorithm=="dnoise_swarm"  | algorithm=="swarm" | algorithm=="swarm_dnoise") {
+  #     if (exists("after_2_ODIN")&exists("after_4a_ODIN")) {
+  #       RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN joined all the sequences, obtained the unique ones and applied swarm to obtain the MOTUs. Before SWARM you had",after_2_ODIN$values[after_2_ODIN$version=="seq_id"],"sequences and at the end you obtained the following stats: \n")
+  #     }
+  #   } else{
+  #     if (exists("after_2_ODIN")) {
+  #       RAGNAROC_report <-  paste(RAGNAROC_report, "The samples were then grouped and the unique sequences obtained being",after_2_ODIN$values[after_2_ODIN$version=="seq_id"],"sequences in total.\n")
+  #     }
+  #   }
+  #   if (algorithm=="swarm_dnoise") {
+  #     RAGNAROC_report <-  paste(RAGNAROC_report, "ODIN used DnoisE to obtain the ESV's of your samples running within them with the following options:\n")
+  #     if (run_entropy) {
+  #       RAGNAROC_report <-  paste(RAGNAROC_report, "Entropy correction (",entropy,"), alpha ",alpha," and minimum number of reads of ",min_reads_ESV,"\n")
+  #     } else {
+  #       RAGNAROC_report <-  paste(RAGNAROC_report, "Alpha ",alpha," and minimum number of reads of ",min_reads_ESV,"\n")
+  #     }
+  #   }
+  # } else {
+  #   RAGNAROC_report <-  paste(RAGNAROC_report, "Sorry but I couldn't find a summary of your ODIN process \n")
+  # }
+  # if (LOKI) {
+  #   RAGNAROC_report <-  paste(RAGNAROC_report, "LOKI used LULU to search for potential pseudogenes and found ",num_discarded," OTUs that were discarded.\n")
+  # } else {
+  #   RAGNAROC_report <-  paste(RAGNAROC_report, "Sorry but I couldn't find a summary of your LOKI process\n")
+  # }
+  # RAGNAROC_report <-  paste(RAGNAROC_report, "During RAGNAROC some filters were applied.\n")
+  # if (remove_bacteria) RAGNAROC_report <-  paste(RAGNAROC_report, bacteria_removed," bacteria were removed\n")
+  # if (remove_contamination) RAGNAROC_report <-  paste(RAGNAROC_report, "contaminations were removed\n")
+  # if (dim(neg_samples)[2]>0) RAGNAROC_report <-  paste(RAGNAROC_report, dim(data_neg_filt_deleted)[1],ifelse(ESV_within_MOTU," ESV"," MOTU")," were removed by neg/blank filter\n")
+  # RAGNAROC_report <-  paste(RAGNAROC_report, "The relative abundance filter of ",min_relative," within samples had effect on", dim(relabund_changed)[2],"id's\n")
+  # if (ESV_within_MOTU&remove_numts) RAGNAROC_report <-  paste(RAGNAROC_report, "The numts filter found",dim(numts_ESV)[1],"numts that were removed.\n")
+  # sink("RAGNAROC_summary_report.txt")
+  # cat(RAGNAROC_report)
+  # sink()
 }
 
-compare.DNA <- function(x,y){
-  as.integer(x) == as.integer(y)
-}
+#' numts
+#' 
+#' Internal function of RAGNAROC to detect numt ESV within MOTUs
+#' 
+#' @details 
+#' numt function will:
+#' 1: keep sequences of the same length as the seed
+#' 2: remove missaligned sequences
+#' 3: search for codon stops using all the mitochondrial genome codes with the 
+#' Biostrings package and keep the one with less reads with stop codons. 
+#' 4: if the MOTU is assigned to metazoans and the seed has 313 bp then check it 
+#' the following aminoacid positions have the conserved ones in metazoans:
+#' 20 = "H"; 23 ="G"; 32 = "N"; 81 ="D"; 95 ="G" 
+#' 
+#' @param data Data Frame of the sequences in the MOTU.
+#' 
+#' @param is_metazoa Logical. whether if the MOTU is assigned to metazoa or not
+#' 
+#' @param motu Character. Name of the MOTU evaluated
+#' 
+#' @param datas_length Numeric vector. Vector with the number of characters in 
+#' each sequence
 
 numts<-function(datas, is_metazoa=FALSE, motu, datas_length) {
   suppressPackageStartupMessages(library(Biostrings))
   suppressPackageStartupMessages(library(stringr))
+  
+  compare.DNA <- function(x,y){
+    as.integer(x) == as.integer(y)
+  }
 
   # compare only mitochondrial genetic code
   mitochondrial_GC <- c(2,3,4,5,7,11,12,14,15,16,17,18)

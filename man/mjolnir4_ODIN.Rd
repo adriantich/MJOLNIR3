@@ -11,12 +11,17 @@ mjolnir4_ODIN(
   d = 13,
   min_reads_MOTU = 2,
   min_reads_ESV = 2,
+  min_relative = 1/50000,
+  blank_relative = 0.1,
+  metadata_table = "",
+  blank_col = "BLANK",
+  blank_tag = TRUE,
   alpha = 4,
   entropy = c(0.47, 0.23, 1.02, 313),
   algorithm = "DnoisE_SWARM",
-  run_dnoise = T,
-  remove_singletons = TRUE,
-  remove_DMS = T
+  run_dnoise = TRUE,
+  remove_singletons = NULL,
+  remove_DMS = TRUE
 )
 }
 \arguments{
@@ -33,7 +38,29 @@ number of differences between two sequences to be linked in the same cluster}
 have to be retained.}
 
 \item{min_reads_ESV}{Numeric. Minimum number of reads that an ESV needs to
-have to be retained.}
+have to be retained. Also works works for non-denoised sequences. In the
+case of algorithms involving SWARM, the removal is performed before SWARM.}
+
+\item{min_relative}{Number of the minimum relative abundance for a unit in the
+sample to be retained.}
+
+\item{blank_relative}{Relative abundance threshold for a unit to be removed if the 
+total abundance in the blank/neg/control is higher than this value in terms of
+relative abundance of the total reads in all samples (see Details).}
+
+\item{metadata_table}{tsv table. if not specified, the file must be named 
+<EXPX>_metadata.tsv. This table must have: a column named "mjolnir_agnomens"
+with the names given to the samples during the pipeline in FREYJA; a column 
+named "original_samples" with the samples names that will be given to the 
+samples at the end of the pipeline; and a column with the name specified in
+in the "blank_col" parameter ("BLANK" by default) where blanks, negatives and
+controls are tagged with a flag specified in the "blank_tag" parameter (T by
+default).}
+
+\item{blank_col}{Column name of the blank column in the "metadata_table"}
+
+\item{blank_tag}{Unique flag to tag the samples that are blank/neg/controls 
+in the "blank_col"}
 
 \item{alpha}{Numeric. Alpha value for DnoisE to run.}
 
@@ -80,12 +107,7 @@ be used for other experiment without previous run of RAN, FREYJA and HELA.}
 
 \item{run_dnoise}{Logical. In the case of the algorithm='DnoisE_SWARM' there is
 the option of not running the DnoisE if it has been already run for a previous
-experiment. The HELA_nonchimeras.fasta is needed anyway to have the information
-of the number of sequences that will be used by RAGNAROC for the final summary.}
-
-\item{remove_singletons}{Logical. If TRUE this will remove the sequences that,
-after dereplication when joining all samples (those will be denoised for when
-algorithm="DnoisE_SWARM" or algorithm="DnoisE"), have only one read.}
+experiment. The denoised and filtered fasta files are needed.}
 
 \item{remove_DMS}{Logical. If TRUE, it will delete all obidms objects that are
 created during the process. This can save a lot of hard disk space. The FALSE
@@ -97,6 +119,7 @@ ODIN performs MOTU clustering and/or denoising. It is one of the main steps of M
 \details{
 The function mjolnir4_ODIN() uses the four different strategies to delimit
 MOTUs and/or ESVs. This strategies are set with the algorithm parameter:
+
 a)"DnoisE_SWARM", b)"SWARM", c)"SWARM_DnoisE" and d)"DnoisE".
 
 In short, DnoisE refers to the denoising process with DnoisE to obtain ESV
@@ -120,32 +143,107 @@ hypervariable metabarcoding markers, such as COI, which usually feature
 extremely high levels of natural diversity, in addition to the random sequencing errors.
 Dereplication step takes place after joining all samples into the same file
 before SWARM in algorithms a, b and c and after DnoisE in algorithms a and d
+
+NEW: now ODIN performs most of the filters that were applied in RAGNAROC. The
+idea is to retrieve an output file for each sample that is independent from the
+rest of the samples (blank and neg corrected; total reads filtered) and with
+denoised ASV/ESV using the name 
+
+"<mjolnir_agnoment>_ODIN_ESV_<original_name>.fasta.".
+
+To do so these are the the different steps of this function:
+
+<<D -> "DnoisE";
+
+DS -> "DnoisE_SWARM"
+
+S -> "SWARM";
+
+SD -> "SWARM_DnoisE";
+
+SaD (SWARM after DnoisE) --> "DnoisE_SWARM" & run_dnoise = F>>
+
+0: define variables and load metadata table
+
+1: D and DS -> denoise the fasta files
+
+2: D,DS,SD,S,SaD -> cat all fasta
+
+3: D,DS,SD,S,SaD -> dereplicate
+
+4: D,DS,SD,S,SaD -> annotate new names
+
+
+filter1A: D,DS -> blank relative abundances filter AS MOTU
+
+filter2A: D,DS -> min relative abundances filter WS ESV
+
+filter3A: D,DS -> remove nletons # improves SWARM for DS
+
+filter1B: SD,S,SaD -> remove nletons # this will improve SWARM performance
+                                     # apply this to SaD just in case
+
+5: D,DS,SD,S,SaD -> export csv file of sequences (if denoised, they are ESV)
+
+6: D,DS -> export fasta DnoisEd & blank filt
+
+7: D -> create fasta files for taxonomic assignment
+
+8: DS,SD,S,SaD -> do SWARM
+
+
+filter2B: SD,S -> blank relative abundances filter AS MOTU
+
+filter3B: SD,S -> min relative abundances filter WS MOTU
+
+filter4B: SD,S -> remove nletons AS MOTUs # remove artefacts
+
+
+9: DS,SD,S,SaD -> create csv files of MOTUs and ESV or seqs.
+
+10: DS,SD,S,SaD -> Also create fasta files for taxonomic assignment
+
+11: SD -> run DnoisE over the csv files
+
+Blank filter: remove any MOTU for which abundance in the blank or negative 
+controls is higher than "blank_relative" of its total read abundance
+and remove blank and NEG samples
+
+Minimum relative abundance filter: Apply a minimum relative abundance 
+threshold for each sample, setting to zero any abundance below "min_relative" 
+of the total reads of this sample. It also applies a "min_reads" filter
 }
 \examples{
 library(mjolnir)
 
 # Define input fastq files (only names of R1 files are needed)
-R1_filenames <-c("ULO1_R1.fastq.gz","ULO2_R1.fastq.gz","ULO3_R1.fastq.gz","ULO4_R1.fastq.gz")
+R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
+                  "ULO4_R1.fastq.gz")
 
-# Input identifiers for the individual libraries to be used. It should be a 4-character name, matching the information in the ngsfilter files
-lib_prefixes <- c("ULO1","ULO2","ULO3","ULO4")
+# Input identifiers for the individual libraries to be used. 
+# It should be a 4-character name, matching the information in the 
+# ngsfilter files.
+lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
 
+# experiment identifier
+experiment <- 'ULOY'
 # Enter number of cores to be used in parallel.
 cores <- 7
 
-# set experiment acronym
-experiment <- "ULOY"
-
-# Run RAN
 mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
 
 # Run FREYJA
-mjolnir2_FREYJA(lib_prefix = lib_prefixes, experiment = experiment, cores = cores, Lmin=299, Lmax=320)
+mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
 mjolnir3_HELA(experiment, cores)
 
 # Run ODIN
-mjolnir4_ODIN(experiment,cores,d=13,min_reads_MOTU=2,min_reads_ESV=2,alpha=4,entropy=c(0.47,0.23,1.02,313), algorithm="DnoisE_SWARM", remove_singletons = TRUE)
+mjolnir4_ODIN(experiment, cores, d = 13, 
+              min_reads_MOTU = 2, min_reads_ESV = 2,
+              min_relative = 1 / 50000, blank_relative = 0.1, 
+              metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
+              alpha = 4, entropy = c(0.47, 0.23, 1.02, 313), 
+              algorithm = "DnoisE_SWARM")
 }
