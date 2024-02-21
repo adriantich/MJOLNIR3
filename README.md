@@ -5,7 +5,7 @@
 
 <H1><b>Metabarcoding Joining Obitools &amp; Linkage Networks In R</b></H1>
 
-<b>by Owen S. Wangensteen & Adrià Antich.</b>
+<b>by Adrià Antich & Owen S. Wangensteen.</b>
 
 MJOLNIR3 is a powerful tool to crush big amounts of raw metabarcoding data, and molding them into organized data sets of taxonomically assigned MOTUs. 
 
@@ -37,33 +37,68 @@ MJOLNIR3 depends on the following dependencies, which must be installed in the s
 - Package Biostrings from the Bioconductor suite. \
   Help on installing Biostrings:
   https://bioconductor.org/packages/release/bioc/html/Biostrings.html
-                   
+
+
+### Future releases
+
+Right now MJOLNIR3 is experiencing new updates. This year 2024 is planned that a new version will be released and obitools will no longer be part of the package. The idea is to use vsearch instead and the taxonomic assignment to be done with IdTaxa and Vsearch. This version surelly will be named "ASGARD: The Gods environment to combine denoising and clustering pipelines for DNA metabarcoding". This pipeline is expected to be incorporated also in [SLIM](https://github.com/adriantich/SLIM) as a user interface alternative to process DNA metabarcoding data.
+
+
 
 ### Installing MJOLNIR3:
 
-1. Create and activate a virtual environments: MJOLNIR3 is highly recommended to be run in python environments. Python3.6 or higher is required but the user can choose its best option. Options: 
+1. Create and activate a virtual environment: MJOLNIR3 is highly recommended to be run in python environments. Python3.6 or higher is required but the user can choose its best option. Options: 
 
 - Recomended --> conda ([Anaconda](https://docs.anaconda.com/anaconda/install/index.html) or [miniconda](https://docs.conda.io/en/latest/miniconda.html))
-  
-      # with conda previously installed
-      # Create conda enviroment
-      conda create -n mjolnir3 python=3.9
-      # to activate the environment tipe
-      conda activate mjolnir3
   
 - [venv](https://docs.python.org/3/library/venv.html) (sudo required to install it) 
 
 - [pyen](https://github.com/pyenv/pyenv)
 
-2. Install dependencies with the virtual environment activated. With the Conda environment some of the software can be installed from conda repositories.
+2. Install dependencies with the virtual environment activated. Follow each dependency specifications for installation if not using conda.  
 
-* It is recommended to download the repository, so constant updates will be occurring for the first versions and updates are easier that way. Then install all the required software within the MJOLNIR3 folder.
+* It is recommended to clone the MJOLNIR3 repository, so constant updates will be occurring for the first versions and updates are easier that way. Then install all the required software within the MJOLNIR3 folder.
 
+        # clone MJOLNIR3 repository
+        git clone https://github.com/adriantich/MJOLNIR3.git
+        cd MJOLNIR3
+
+        # create the conda environment with the dependencies
+        conda env create -f environment.yaml
+        conda activate mjolnir3
+
+        # install the rest of dependencies  
+        # installation of obitools
+        git clone https://git.metabarcoding.org/obitools/obitools3.git
+        cd obitools3
+        pip3 install cython
+        python3 setup.py install
+        source obi_completion_script.bash
+        cd ..
+        # installation of lulu
+        git clone https://github.com/tobiasgf/lulu.git
+        Rscript -e 'install.packages("lulu",repos=NULL)'
+
+        # finally install MJOLNIR3 within MJOLNIR3 folder
+        Rscript -e 'install.packages(".", repos = NULL)'
+
+* Alternatively you can install all the dependencies manually:
+
+        
+        # with conda previously installed
+        # Create conda enviroment
+        conda create -n mjolnir3 python=3.9
+        # to activate the environment tipe
+        conda activate mjolnir3
         # activate the conda environment or your prefered one
         conda activate mjolnir3
         # clone MJOLNIR3 repository
         git clone https://github.com/adriantich/MJOLNIR3.git
         cd MJOLNIR3
+        # installation of cutadapt
+        conda config --add channels conda-forge
+        conda config --add channels bioconda
+        conda install -c bioconda cutadapt
         # installation of Obitools3 
         # if you have problems with cmake, you can install it with conda
         # conda install cmake
@@ -74,57 +109,44 @@ MJOLNIR3 depends on the following dependencies, which must be installed in the s
         source obi_completion_script.bash
         cd ..
         # installation of vsearch
-        wget https://github.com/torognes/vsearch/archive/v2.26.1.tar.gz
-        tar xzf v2.26.1.tar.gz
-        cd vsearch-2.26.1
-        ./autogen.sh
-        ./configure CFLAGS="-O3" CXXFLAGS="-O3"
-        make
-        cd ..
+        conda install -c bioconda vsearch
         # installation of swarm
-        git clone https://github.com/torognes/swarm.git
-        cd swarm/
-        make
-        cd ..
+        conda install -c bioconda swarm
         # installation of DnoisE
-        git clone https://github.com/adriantich/DnoisE.git
-        cd DnoisE/
-        bash install.sh
-        cd ../..
-        # now turn to R
-        R
-        # install lulu
-        > library(devtools)
-        > install_github("tobiasgf/lulu")  
-        # install biostrings
-        > if (!require("BiocManager", quietly = TRUE))
-               install.packages("BiocManager")
-        > BiocManager::install("Biostrings")
+        conda install bioconda::dnoise
+        # installation of lulu
+        git clone https://github.com/tobiasgf/lulu.git
+        Rscript -e 'install.packages("lulu",repos=NULL)'
+        # installation of Biostrings
+        Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
+        Rscript -e 'BiocManager::install("Biostrings")'
         # Finally install MJOLNIR3
-        > install.packages('MJOLNIR3', repos = NULL)
+        # leave the MJOLNIR3 folder
+        cd ../
+        Rscript -e 'install.packages("MJOLNIR3", repos = NULL)'
 
 * For any update remove the package and install it again. In R console:
 
         > remove.package('mjolnir')
         > install.packages('MJOLNIR3', repos = NULL)
 
-* Alternatively you can install each dependency using anaconda or your prefered method but keep in mind that the paths to these dependencies will have to be specified in the conda paths, in your own PATH or specified for each in your script.
+* Alternatively you can install each dependency using your prefered method but keep in mind that the paths to these dependencies will have to be specified in the PATH variable.
 
 3. Alternative ways to install MJOLNIR3 
 * If the devtools library is properly installed in the system: MJOLNIR3 can be installed directly from the R console using: 
 
         > library(devtools)
-        > install_github("metabarpark/MJOLNIR3") 
+        > install_github("adriantich/MJOLNIR3") 
 * If the devtools library is not installed: 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MJOLNIR3 can be downloaded as a package from this link: https://github.com/metabarpark/MJOLNIR3/archive/main.zip.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MJOLNIR3 can be downloaded as a package from this link: https://github.com/adriantich/MJOLNIR3/archive/main.zip.
 Then the file must be unzipped and MJOLNIR3 can be installed offline from the R console using:
 
         > install.packages("MJOLNIR3-main", repos=NULL)
         
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Another option is to clone with git the MJOLNIR3 repository: 
 
-        git clone https://github.com/metabarpark/MJOLNIR3.git
+        git clone https://github.com/adriantich/MJOLNIR3.git
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and then install the package from R:
 
         > install.packages("MJOLNIR3-main", repos=NULL)
@@ -151,7 +173,7 @@ The following settings are recommended for 16S Bacterial F515/R806 primers (Capo
 - In mjolnir2_FREYJA: Lmin=215,Lmax=299 
 - In mjolnir4_ODIN: d=1,algorithm="SWARM"
 
-<H2>The MJOLNIR3 Pipeline</H2>
+<H2>The MJOLNIR3 Pipeline ¡¡Not Updated: read Manual.pdf instead meanwhile!!</H2>
 
 This is a simplified scheme of the MJOLNIR3 workflow:
 
