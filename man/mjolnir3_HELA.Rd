@@ -4,7 +4,7 @@
 \alias{mjolnir3_HELA}
 \title{HELA: Hierarchical Elimination of Lurking Artifacts}
 \usage{
-mjolnir3_HELA(experiment = NULL, lib = NULL, cores)
+mjolnir3_HELA(experiment = NULL, cores = 1, ...)
 }
 \arguments{
 \item{experiment}{Character string. Acronym for the experiment. This
@@ -48,5 +48,5 @@ mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
 mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
-mjolnir3_HELA(experiment, cores)
+mjolnir3_HELA(experiment = experiment, cores = cores)
 }

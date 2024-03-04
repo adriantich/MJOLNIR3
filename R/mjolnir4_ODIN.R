@@ -213,10 +213,10 @@
 #' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 #'
 #' # Run HELA
-#' mjolnir3_HELA(experiment, cores)
+#' mjolnir3_HELA(experiment = experiment, cores = cores)
 #'
 #' # Run ODIN
-#' mjolnir4_ODIN(experiment, cores, d = 13, 
+#' mjolnir4_ODIN(experiment = experiment, cores = cores, d = 13, 
 #'               min_reads_MOTU = 2, min_reads_ESV = 2,
 #'               min_relative = 1 / 50000, blank_relative = 0.1, 
 #'               metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
@@ -224,7 +224,7 @@
 #'               algorithm = "DnoisE_SWARM")
 
 
-mjolnir4_ODIN <- function(experiment = NULL, lib = NULL, cores, d = 13,
+mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
                           min_reads_MOTU = 2, min_reads_ESV = 2,
                           min_relative = 1 / 50000,
                           blank_relative = 0.1,
@@ -233,7 +233,7 @@ mjolnir4_ODIN <- function(experiment = NULL, lib = NULL, cores, d = 13,
                           alpha = 4,
                           entropy = c(0.47, 0.23, 1.02, 313),
                           algorithm = "DnoisE_SWARM", run_dnoise = TRUE,
-                          remove_singletons = NULL, remove_DMS = TRUE) {
+                          remove_singletons = NULL, remove_DMS = TRUE, ...) {
   
   
   #####
@@ -303,7 +303,7 @@ mjolnir4_ODIN <- function(experiment = NULL, lib = NULL, cores, d = 13,
   suppressPackageStartupMessages(library(dplyr))
   suppressPackageStartupMessages(library(tidyr))
   
-  if (!is.null(lib) && is.null(experiment)) {
+  if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
     experiment <- lib
     # Print deprecation warning

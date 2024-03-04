@@ -6,8 +6,7 @@
 \usage{
 mjolnir4_ODIN(
   experiment = NULL,
-  lib = NULL,
-  cores,
+  cores = 1,
   d = 13,
   min_reads_MOTU = 2,
   min_reads_ESV = 2,
@@ -21,7 +20,8 @@ mjolnir4_ODIN(
   algorithm = "DnoisE_SWARM",
   run_dnoise = TRUE,
   remove_singletons = NULL,
-  remove_DMS = TRUE
+  remove_DMS = TRUE,
+  ...
 )
 }
 \arguments{
@@ -237,10 +237,10 @@ mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
 mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
-mjolnir3_HELA(experiment, cores)
+mjolnir3_HELA(experiment = experiment, cores = cores)
 
 # Run ODIN
-mjolnir4_ODIN(experiment, cores, d = 13, 
+mjolnir4_ODIN(experiment = experiment, cores = cores, d = 13, 
               min_reads_MOTU = 2, min_reads_ESV = 2,
               min_relative = 1 / 50000, blank_relative = 0.1, 
               metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 

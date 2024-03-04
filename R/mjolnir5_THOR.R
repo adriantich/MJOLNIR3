@@ -67,10 +67,10 @@
 #' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 #'
 #' # Run HELA
-#' mjolnir3_HELA(experiment, cores)
+#' mjolnir3_HELA(experiment = experiment, cores = cores)
 #'
 #' # Run ODIN
-#' mjolnir4_ODIN(experiment, cores, d = 13, 
+#' mjolnir4_ODIN(experiment = experiment, cores = cores, d = 13, 
 #'               min_reads_MOTU = 2, min_reads_ESV = 2,
 #'               min_relative = 1 / 50000, blank_relative = 0.1, 
 #'               metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
@@ -78,24 +78,24 @@
 #'               algorithm = "DnoisE_SWARM")
 #' 
 #' # set the directory where the database is stored
-#' tax_dir <- "~/taxo_NCBI/"
-#' tax_dms_name <- "DUFA_COI"
+#' tax_db <- "~/taxo_NCBI/DUFA_COI"
 #' 
 #' # Run THOR
-#' mjolnir5_THOR(experiment, cores, 
-#'               tax_dir = tax_dir, tax_dms_name = tax_dms_name,run_ecotag = T)
+#' mjolnir5_THOR(experiment = experiment, cores = cores, 
+#'               tax_db = tax_db, run_ecotag = T)
 
-mjolnir5_THOR <- function(experiment=NULL, lib=NULL,cores,
-                          tax_dir=".",tax_dms_name=NULL,tax_db=NULL,
-                          run_ecotag=T,vsearch = F,remove_DMS=T, minimum_circle=0.7){
+mjolnir5_THOR <- function(experiment = NULL, cores = 1,
+                          tax_db = NULL,
+                          run_ecotag = T, vsearch = F, remove_DMS = T, 
+                          minimum_circle = 0.7, ...){
   
-  if (!is.null(lib) && is.null(experiment)) {
+  if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
     experiment <- lib
     # Print deprecation warning
     warning("The 'lib' argument is deprecated. Please use 'experiment' instead.")
   }
-  if (!is.null(tax_dms_name) && is.null(tax_db)) {
+  if ((exists("tax_dms_name") | exists("tax_dms_name")) && is.null(tax_db)) {
     # Print deprecation warning
     warning("The 'tax_dms_name' and the 'tax_dir' arguments are deprecated. Please use only 'tax_db' instead.")
     tax_db <- paste0(normalizePath(tax_dir), "/", tax_dms_name)
@@ -103,32 +103,34 @@ mjolnir5_THOR <- function(experiment=NULL, lib=NULL,cores,
 
   tax_db_dir <- normalizePath(dirname(tax_db))
   tax_db_name <- basename(tax_db)
-
-  if (cores > 1) {
-    message("THOR will use ", cores, " cores for parallel processing.")
-    fasta_file <- readLines(paste0(experiment,"_ODIN.fasta"))
-
-    seqs <- grep(">",fasta_file)
-    seq_rank <- sort(seqs %% cores)
-
-    for (i in 1:cores) {
-      if (i == 1) {
-        start_line <- 1
-        end_line <- seqs[grep(unique(seq_rank)[i+1],seq_rank)[1]]-1
-      } else if (i == cores) {
-        start_line <- seqs[grep(unique(seq_rank)[i],seq_rank)[1]]
-        end_line <- length(fasta_file)
-      } else {
-        start_line <- seqs[grep(unique(seq_rank)[i],seq_rank)[1]]
-        end_line <- seqs[grep(unique(seq_rank)[i+1],seq_rank)[1]]-1
+  divide_fasta <- function(cores = cores, experiment = experiment) {
+    if (cores > 1) {
+      message("THOR will use ", cores, " cores for parallel processing.")
+      fasta_file <- readLines(paste0(experiment,"_ODIN.fasta"))
+      
+      seqs <- grep(">",fasta_file)
+      seq_rank <- sort(seqs %% cores)
+      
+      for (i in 1:cores) {
+        if (i == 1) {
+          start_line <- 1
+          end_line <- seqs[grep(unique(seq_rank)[i+1],seq_rank)[1]]-1
+        } else if (i == cores) {
+          start_line <- seqs[grep(unique(seq_rank)[i],seq_rank)[1]]
+          end_line <- length(fasta_file)
+        } else {
+          start_line <- seqs[grep(unique(seq_rank)[i],seq_rank)[1]]
+          end_line <- seqs[grep(unique(seq_rank)[i+1],seq_rank)[1]]-1
+        }
+        writeLines(paste0(fasta_file[start_line:end_line],
+                          collapse = "\n"),
+                   paste0(experiment, "_THOR_pretaxa_part_",sprintf("%02d",i),".fasta"))
       }
-      writeLines(paste0(fasta_file[start_line:end_line],
-                        collapse = "\n"),
-                  paste0(experiment, "_THOR_pretaxa_part_",sprintf("%02d",i),".fasta"))
-      }
-  } else {
-    message("THOR will use 1 core for processing.")
+    } else {
+      message("THOR will use 1 core for processing.")
+    }
   }
+  
 
 
   if (!vsearch) {
@@ -137,6 +139,8 @@ mjolnir5_THOR <- function(experiment=NULL, lib=NULL,cores,
       message("THOR will first clear the battle field.")
       message("Any directory or file containing the word THOR will be removed.")
       system("rm -r *THOR*",intern = T, wait = T)
+      
+      divide_fasta(cores = cores, experiment = experiment)
       
       # check whether the taxonomic folder exists
       tax_dir <- list.dirs(path = tax_db_dir, recursive = FALSE, full.names = TRUE)
@@ -996,6 +1000,7 @@ mjolnir5_THOR <- function(experiment=NULL, lib=NULL,cores,
       message("run_ecotag is set to T. However, as vsearch has been selected, THOR will run vsearch instead of ecotag")
     }
     message("Running vsearch")
+    divide_fasta(cores = cores, experiment = experiment)
 
     # check whether the taxonomic database exists
     tax_dir <- list.dirs(path = tax_db_dir, recursive = FALSE, full.names = TRUE)

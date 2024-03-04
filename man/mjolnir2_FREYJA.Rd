@@ -6,7 +6,6 @@
 \usage{
 mjolnir2_FREYJA(
   experiment = NULL,
-  lib = NULL,
   cores = 1,
   Lmin = 299,
   Lmax = 320,
@@ -14,7 +13,8 @@ mjolnir2_FREYJA(
   R1_motif = "_R1",
   R2_motif = "_R2",
   remove_DMS = T,
-  run_on_tmp = F
+  run_on_tmp = F,
+  ...
 )
 }
 \arguments{

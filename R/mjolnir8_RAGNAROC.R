@@ -81,10 +81,10 @@
 #' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 #'
 #' # Run HELA
-#' mjolnir3_HELA(experiment, cores)
+#' mjolnir3_HELA(experiment = experiment, cores = cores)
 #'
 #' # Run ODIN
-#' mjolnir4_ODIN(experiment, cores, d = 13, 
+#' mjolnir4_ODIN(experiment = experiment, cores = cores, d = 13, 
 #'               min_reads_MOTU = 2, min_reads_ESV = 2,
 #'               min_relative = 1 / 50000, blank_relative = 0.1, 
 #'               metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
@@ -92,33 +92,32 @@
 #'               algorithm = "DnoisE_SWARM")
 #' 
 #' # set the directory where the database is stored
-#' tax_dir <- "~/taxo_NCBI/"
-#' tax_dms_name <- "DUFA_COI"
+#' tax_db <- "~/taxo_NCBI/DUFA_COI"
 #' 
 #' # Run THOR
-#' mjolnir5_THOR(experiment, cores, 
-#'               tax_dir = tax_dir, tax_dms_name = tax_dms_name,run_ecotag = T)
+#' mjolnir5_THOR(experiment = experiment, cores = cores, 
+#'               tax_db = tax_db, run_ecotag = T)
 #' 
 #' # Run FRIGGA
-#' mjolnir6_FRIGGA(experiment)
+#' mjolnir6_FRIGGA(experiment = experiment)
 #' 
 #' # Run LOKI
-#' mjolnir7_LOKI(experiment, min_id = .84)
+#' mjolnir7_LOKI(experiment = experiment, min_id = .84)
 #' 
 #' # Run RAGNAROC
-#' mjolnir8_RAGNAROC(experiment, remove_bacteria = T, ESV_within_MOTU = T,
+#' mjolnir8_RAGNAROC(experiment = experiment, remove_bacteria = T, ESV_within_MOTU = T,
 #'                   remove_numts = F, cores = 1)
 
-mjolnir8_RAGNAROC <- function(experiment=NULL, lib=NULL, metadata_table="",
-                              output_file="", output_file_ESV="",
-                              min_reads=0, remove_bacteria=T,
-                              remove_contamination=F,
-                              contamination_file="contaminants.txt",
-                              ESV_within_MOTU=T,
-                              remove_numts=F, cores=1){
+mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
+                              output_file = "", output_file_ESV = "",
+                              min_reads = 0, remove_bacteria = T,
+                              remove_contamination = F,
+                              contamination_file = "contaminants.txt",
+                              ESV_within_MOTU = T,
+                              remove_numts = F, cores = 1, ...){
 
   
-  if (!is.null(lib) && is.null(experiment)) {
+  if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
     experiment <- lib
     # Print deprecation warning

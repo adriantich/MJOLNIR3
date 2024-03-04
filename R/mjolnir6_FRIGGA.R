@@ -39,10 +39,10 @@
 #' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 #'
 #' # Run HELA
-#' mjolnir3_HELA(experiment, cores)
+#' mjolnir3_HELA(experiment = experiment, cores = cores)
 #'
 #' # Run ODIN
-#' mjolnir4_ODIN(experiment, cores, d = 13, 
+#' mjolnir4_ODIN(experiment = experiment, cores = cores, d = 13, 
 #'               min_reads_MOTU = 2, min_reads_ESV = 2,
 #'               min_relative = 1 / 50000, blank_relative = 0.1, 
 #'               metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
@@ -50,19 +50,18 @@
 #'               algorithm = "DnoisE_SWARM")
 #' 
 #' # set the directory where the database is stored
-#' tax_dir <- "~/taxo_NCBI/"
-#' tax_dms_name <- "DUFA_COI"
+#' tax_db <- "~/taxo_NCBI/DUFA_COI"
 #' 
 #' # Run THOR
-#' mjolnir5_THOR(experiment, cores, 
-#'               tax_dir = tax_dir, tax_dms_name = tax_dms_name,run_ecotag = T)
+#' mjolnir5_THOR(experiment = experiment, cores = cores, 
+#'               tax_db = tax_db, run_ecotag = T)
 #' 
 #' # Run FRIGGA
-#' mjolnir6_FRIGGA(experiment)
+#' mjolnir6_FRIGGA(experiment = experiment)
 
-mjolnir6_FRIGGA <- function(experiment=NULL, lib=NULL){
+mjolnir6_FRIGGA <- function(experiment=NULL, ...){
   
-  if (!is.null(lib) && is.null(experiment)) {
+  if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
     experiment <- lib
     # Print deprecation warning

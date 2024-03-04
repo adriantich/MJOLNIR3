@@ -63,12 +63,12 @@
 #' # Run FREYJA
 #' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
-mjolnir2_FREYJA <- function(experiment=NULL, lib=NULL,cores=1,Lmin=299,Lmax=320,score_obialign=40,
-                            # demultiplexed=F,
-                            # primer_F="GGWACWRGWTGRACWNTNTAYCCYCC",primer_R="TANACYTCNGGRTGNCCRAARAAYCA",
-                            R1_motif="_R1",R2_motif="_R2",remove_DMS=T, run_on_tmp=F) {
+mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320,
+                            score_obialign = 40,
+                            R1_motif = "_R1", R2_motif = "_R2", remove_DMS = T, 
+                            run_on_tmp = F, ...) {
   
-  if (!is.null(lib) && is.null(experiment)) {
+  if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
     experiment <- lib
     # Print deprecation warning

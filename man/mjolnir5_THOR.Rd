@@ -6,15 +6,13 @@
 \usage{
 mjolnir5_THOR(
   experiment = NULL,
-  lib = NULL,
-  cores,
-  tax_dir = ".",
-  tax_dms_name = NULL,
+  cores = 1,
   tax_db = NULL,
   run_ecotag = T,
   vsearch = F,
   remove_DMS = T,
-  minimum_circle = 0.7
+  minimum_circle = 0.7,
+  ...
 )
 }
 \arguments{
@@ -84,10 +82,10 @@ mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
 mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 # Run HELA
-mjolnir3_HELA(experiment, cores)
+mjolnir3_HELA(experiment = experiment, cores = cores)
 
 # Run ODIN
-mjolnir4_ODIN(experiment, cores, d = 13, 
+mjolnir4_ODIN(experiment = experiment, cores = cores, d = 13, 
               min_reads_MOTU = 2, min_reads_ESV = 2,
               min_relative = 1 / 50000, blank_relative = 0.1, 
               metadata_table = "", blank_col = "BLANK", blank_tag = TRUE, 
@@ -95,10 +93,9 @@ mjolnir4_ODIN(experiment, cores, d = 13,
               algorithm = "DnoisE_SWARM")
 
 # set the directory where the database is stored
-tax_dir <- "~/taxo_NCBI/"
-tax_dms_name <- "DUFA_COI"
+tax_db <- "~/taxo_NCBI/DUFA_COI"
 
 # Run THOR
-mjolnir5_THOR(experiment, cores, 
-              tax_dir = tax_dir, tax_dms_name = tax_dms_name,run_ecotag = T)
+mjolnir5_THOR(experiment = experiment, cores = cores, 
+              tax_db = tax_db, run_ecotag = T)
 }

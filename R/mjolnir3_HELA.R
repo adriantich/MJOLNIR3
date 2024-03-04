@@ -42,13 +42,13 @@
 #' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 #'
 #' # Run HELA
-#' mjolnir3_HELA(experiment, cores)
+#' mjolnir3_HELA(experiment = experiment, cores = cores)
 
 
-mjolnir3_HELA <- function(experiment=NULL, lib=NULL, cores){
+mjolnir3_HELA <- function(experiment = NULL, cores = 1, ...){
 
   suppressPackageStartupMessages(library(parallel))
-  if (!is.null(lib) && is.null(experiment)) {
+  if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
     experiment <- lib
     # Print deprecation warning

@@ -8,12 +8,12 @@ mjolnir1_RAN(
   R1_filenames = "",
   lib_prefix = "",
   experiment = NULL,
-  lib = NULL,
   primer_F = "GGWACWRGWTGRACWNTNTAYCCYCC",
   primer_R = "TANACYTCNGGRTGNCCRAARAAYCA",
   cores = 1,
   R1_motif = "_R1",
-  R2_motif = "_R2"
+  R2_motif = "_R2",
+  ...
 )
 }
 \arguments{
@@ -60,7 +60,7 @@ If the fastq_name_R1. column is not in the metadata, RAN will use the lib_prefix
 Files required:
 - ngsfilter file, needed only for multiplexed libraries
      For each library, a ngsfilter file is needed and must be named
-     ngsfiler_<library identifier>.tsv. This must contain five tab-separated
+     ngsfilter_<library identifier>.tsv. This must contain five tab-separated
      columns and no header. The first column with the library identifier, the
      second with the mjolnir_agnomens, the third with the sample tags, the
      fourth with the forward primers and the fifth with the reverse primers.
