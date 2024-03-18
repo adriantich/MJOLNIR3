@@ -384,6 +384,19 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
     }
   }
   
+  # remove from sample list those samples with zero reads
+  after_1 <- mclapply(sample_files,function(file){
+    output <- system(paste0("grep '>' ",file," | wc -l"),
+                     intern = TRUE, wait = TRUE)
+    value <- as.numeric(output)
+    return(data.frame(file=paste0(file),
+                      num_seqs=value))
+  },mc.cores = cores)
+  after_1 <- do.call(rbind, after_1)
+  sample_files <- sample_files[sample_files %in%
+                                 after_1$file[after_1$num_seqs > 0]]
+  sample_list <- gsub("_ODIN.*.fasta", "", sample_files)
+  
   #####
   # 2: D,DS,SD,S,SaD -> cat all fasta
   #####

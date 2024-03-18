@@ -90,6 +90,8 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
   metadata <- read.table(paste0(experiment, "_metadata.tsv"),
                          sep = "\t", header = TRUE)
   if ('fastq_name_R1' %in% names(metadata)) {
+    # in this case the names for the fastq files are in the metadata which mean 
+    # that the samples are demultiplexed but the primer needs to be removed
     fastqR1_list <- metadata$fastq_name_R1
     agnomens <-  metadata$original_samples
 
@@ -138,6 +140,9 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
       system(cutadapt_command_primers, wait = TRUE, intern = TRUE)
     }
   } else {
+    # in this case the samples are not demultiplexed. 
+    # first the samples are demultiplexed with the sample tags 
+    # then the primers are removed from the demultiplexed samples.
 
     message("RAN will demultiplex the following initial FASTQ files:")
     message(paste(R1_filenames))
@@ -146,6 +151,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
       stop("No ngsfilter file found.")
     }
     for (i in seq_along(R1_filenames)) {
+      # this process is done for each Library in each loop.
       lib <- lib_prefix[i]
       R1_file <- R1_filenames[i]
       R2_file <- gsub(R1_motif, R2_motif, R1_file)
@@ -164,6 +170,8 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                   ngsfilter_files[grep(lib, ngsfilter_files)], " file."))
       }
       for (tag_combi in unique(ngsfile$V3)) {
+        # for each tag combination do cutadapt first for the tag combi
+        # and then for cutadapt to remove the primers
         sample_num <- which(ngsfile$V3 == tag_combi)
 
         # for each loop every tag will be of length one
@@ -180,10 +188,11 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
         rev_primer <- ngsfile$V5[sample_num]
         temp_file_R1 <- paste0('tag1_temp01.fastq')
         temp_file_R2 <- paste0('tag2_temp01.fastq')
-
+        
+        # here cutadapt commands for tag and primers
         cutadapt_command_tag <- c()
         cutadapt_command_primers <- c()
-
+        
         cutadapt_command_tag <- paste0(cutadapt_command_tag,
                                         "cutadapt -e 0 ", # allow 0 errors
                                         "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
@@ -242,7 +251,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                             "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                             " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                                             " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
-                                            "-g ", fwd_primer[j], " -G ", rev_primer[j], # these are the sample_tags # nolint: line_length_linter.
+                                            "-g ", fwd_primer[j], " -G ", rev_primer[j], # these are the primers # nolint: line_length_linter.
                                             " -o ", fwd_outfile[j], " -p ", rev_outfile[j], # sample names as original # nolint: line_length_linter.
                                             " ", temp_file_R1, " ", temp_file_R2, " ; ") # input files # nolint: line_length_linter.
           if (fwd_tag != rev_tag) {
@@ -253,7 +262,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                               "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                               " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                                               " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
-                                              "-g ", rev_primer[j], " -G ", fwd_primer[j], # these are the sample_tags # nolint: line_length_linter.
+                                              "-g ", rev_primer[j], " -G ", fwd_primer[j], # these are the primers # nolint: line_length_linter.
                                               " -o temp_fileR1_rev.fastq -p temp_fileR2_fwd.fastq", # sample names as original # nolint: line_length_linter.
                                               " ", temp_file_R1, " ", temp_file_R2, " ; ",
                                               # now concatenate and remove
