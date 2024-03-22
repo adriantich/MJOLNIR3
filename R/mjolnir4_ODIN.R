@@ -706,7 +706,6 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
 blank_correction <- function(seqs_abund, 
                              blank_col, metadata, blank_tag,
                              blank_relative){
-  sample_cols <- grep("_sample_", names(seqs_abund))
   if(blank_col %in% names(metadata) &&
      sum(grepl(blank_tag, metadata[, blank_col])) > 0) {
     blank_columns <- grep(paste0(metadata$mjolnir_agnomens[grep(blank_tag,
@@ -719,6 +718,7 @@ blank_correction <- function(seqs_abund,
               paste(metadata$mjolnir_agnomens[grep(blank_tag,metadata[,blank_col])],
                     collapse = ', '))
       neg_reads <- rowSums(neg_samples)
+      sample_cols <- grep("_sample_", names(seqs_abund))
       sample_reads <- rowSums(seqs_abund[,sample_cols])
       # data_neg_filt_deleted <- seqs_abund[neg_reads/(sample_reads+neg_reads) > blank_relative,]
       seqs_abund <- seqs_abund[!neg_reads/(sample_reads+neg_reads) > blank_relative,]
