@@ -97,7 +97,7 @@ mjolnir6_FRIGGA <- function(experiment=NULL, ...){
   db$COUNT <- rowSums(db[,grep("sample",names(db))])
 
   write.table(db,outfile,sep="\t",quote=F,row.names=F)
-  message("FRYGGA is done. File ", outfile, " written, including ",nrow(db)," MOTUs with ",sum(db$total_reads)," total reads in ",n_samples," samples.")
+  message("FRYGGA is done. File ", outfile, " written, including ",nrow(db)," MOTUs with ",sum(db$COUNT)," total reads in ",n_samples," samples.")
   message("(",sum(db$COUNT>1)," non-singletons MOTUs).")
 }
 

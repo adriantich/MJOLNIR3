@@ -90,8 +90,8 @@ mjolnir7_LOKI <- function(experiment = NULL, min_id = .84,
   }
 
   message("LOKI will produce a pairwise match list for LULU.")
-  system(paste0("cat ",experiment,"_ODIN_part_??.fasta > ",experiment,"_LOKI.fasta"))
-  system(paste0("vsearch --usearch_global ",experiment,"_LOKI.fasta --db ",experiment,"_LOKI.fasta --self --id ",min_id," --iddef 1 --userout ",experiment,"_LOKI_match_list.txt -userfields query+target+id --maxaccepts 0 --query_cov .9 --maxhits 10"),intern=T,wait=T)
+  
+  system(paste0("vsearch --usearch_global ",experiment,"_ODIN.fasta --db ",experiment,"_ODIN.fasta --self --id ",min_id," --iddef 1 --userout ",experiment,"_LOKI_match_list.txt -userfields query+target+id --maxaccepts 0 --query_cov .9 --maxhits 10"),intern=T,wait=T)
   message("LOKI will now remove the pseudogenes with LULU.")
 
   suppressPackageStartupMessages(library("lulu"))
