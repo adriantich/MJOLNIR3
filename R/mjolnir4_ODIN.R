@@ -717,7 +717,14 @@ blank_correction <- function(seqs_abund,
       message("The samples used in this steps as blanks are: ", 
               paste(metadata$mjolnir_agnomens[grep(blank_tag,metadata[,blank_col])],
                     collapse = ', '))
-      neg_reads <- rowSums(neg_samples)
+      if (length(blank_columns) == 1) {
+        neg_reads <- neg_samples
+      } else {
+        neg_reads <- rowSums(neg_samples)
+      }
+      if (!is.data.frame(seqs_abund)) { 
+        message("You have the honor to have found an error predicted by Adria. Tell him to solve it.")
+      }
       sample_cols <- grep("_sample_", names(seqs_abund))
       sample_reads <- rowSums(seqs_abund[,sample_cols])
       # data_neg_filt_deleted <- seqs_abund[neg_reads/(sample_reads+neg_reads) > blank_relative,]
