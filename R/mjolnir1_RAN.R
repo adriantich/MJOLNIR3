@@ -96,7 +96,8 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
   if (is.null(experiment)){
     stop("Error: experiment argument required")
   }
-  if (exists("lib_prefixes") && lib_prefix == "") {
+  if (exists("lib_prefixes") &&
+      length(lib_prefix) == 1 && lib_prefix[1] == "") {
     # Use lib as experiment
     lib_prefix <- lib_prefixes
     # Print deprecation warning
