@@ -5,24 +5,33 @@
 #' R2 the reverse sequences.
 #'
 #' @details
-#' If samples are already demultiplexed primers need to be set or LERAY_XT primers
-#' for COI will be used by default. Also RAN will read the
-#' names of each individual R1 fastq files from a column in the LIBX_metadata.tsv
-#' file, called fastq_name_R1. In the metadata table, each sample in the
-#' original_samples column must have a their corresponding fastq_name_R1 and
-#' mjolnir_agnomen (LIBX_sample_XXX).
-#' If the fastq_name_R1. column is not in the metadata, RAN will use the lib_prefix.
+#' Starting with multiplexed libraries:
 #' Files required:
 #' - ngsfilter file, needed only for multiplexed libraries
 #'      For each library, a ngsfilter file is needed and must be named
 #'      ngsfilter_<library identifier>.tsv. This must contain five tab-separated
-#'      columns and no header. The first column with the library identifier, the
-#'      second with the mjolnir_agnomens, the third with the sample tags, the
+#'      columns and no header. The first column with the library identifier
+#'      (four charachter identifier), the second with the mjolnir_agnomens,
+#'      the third with the sample tags, the
 #'      fourth with the forward primers and the fifth with the reverse primers.
 #' - metadata file
 #'      a metadata file containing at least two columns required,
 #'      'original_samples' and 'mjolnir_agnomens' (fastq_name_R1 for demultiplexed
 #'       libraries), and named as <experiment identifier>_metadata.tsv.
+#' 
+#' Starting with demultiplexed samples:
+#' If samples are already demultiplexed primers need to be set
+#' (primer_F & primer_R) or LERAY_XT primers
+#' for COI will be used by default. 
+#' Files required:
+#' - metadata file. RAN will read the
+#'      names of each individual R1 fastq files (full name including extension)
+#'      from a column in the LIBX_metadata.tsv
+#'      file, called "fastq_name_R1". In the metadata table, each sample in the
+#'      original_samples column must have a their corresponding fastq_name_R1 and
+#'      mjolnir_agnomen (LIBX_sample_XXX).
+#'      If the fastq_name_R1. column is not in the metadata, RAN will use the lib_prefix.
+#' 
 #'
 #' @param R1_filenames Character vector with the names of the forward fastq or
 #' fastq.gz files.
@@ -86,6 +95,13 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
   }
   if (is.null(experiment)){
     stop("Error: experiment argument required")
+  }
+  if (exists("lib_prefixes") && lib_prefix == "") {
+    # Use lib as experiment
+    lib_prefix <- lib_prefixes
+    # Print deprecation warning
+    warning(paste("The 'lib_prefixes' argument is deprecated. Please use 'lib_prefix' instead.\n",
+                  "It's okay by now but don't repeat it, okay?"))
   }
   metadata <- read.table(paste0(experiment, "_metadata.tsv"),
                          sep = "\t", header = TRUE)
