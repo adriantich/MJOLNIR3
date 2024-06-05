@@ -371,7 +371,10 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
         system(paste0("cat ",
                       paste0(multilane_df$lane_name[multilane_df$name == final_file],
                             collapse = " "),
-                      ">", final_file))
+                      ">", final_file, 
+                      " ; rm ",
+                      paste0(multilane_df$lane_name[multilane_df$name == final_file],
+                            collapse = " ")))
     }
   }
 
