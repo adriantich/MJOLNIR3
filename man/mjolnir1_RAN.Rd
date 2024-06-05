@@ -49,16 +49,17 @@ the forward.}
 has only one sequencing lane. If TRUE, only one library is processed at a time.}
 }
 \description{
-RAN function will prepare the FASTQ raw data for every sample without sample
-tags and primers. The R1 output files will contain all forward sequences and
+RAN function will prepare the FASTQ raw data for each sample with the sample
+tags and primers removed. The R1 output files will contain all forward sequences and
 R2 the reverse sequences. Please, read the Details section before running.
 }
 \details{
 RAN considers the following scenarios:
 
-- \bold{Scenario 1}. The samples are multiplexed in Libraries.
+- \bold{Scenario 1}. The samples are multiplexed in a library/libraries 
+   (it is possible to run multiple libraries at once from a single experiment).
    Each library has only two raw .fastq(.gz), R1 and R2.
-   For each library there must be one ngsfile (see below)
+   For each library there must be only one ngsfile (see below)
    and for the whole experiment only one metadata file (see below).
    mjolnir_agnomens (the standard name of the sample during the pipeline)
    must be unique, it must not be the same in different ngsfiles.
