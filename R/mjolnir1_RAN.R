@@ -2,9 +2,27 @@
 #'
 #' RAN function will prepare the FASTQ raw data for every sample without sample
 #' tags and primers. The R1 output files will contain all forward sequences and
-#' R2 the reverse sequences.
+#' R2 the reverse sequences. Please, read the Details section before running.
 #'
 #' @details
+#' RAN considers the following scenarios
+#' Scenario 1. The samples are multiplexed in Libraries.
+#'    Each library has only two raw .fastq(.gz), R1 and R2.
+#'    For each library there must be one ngsfile (see below)
+#'    and for the whole experiment only one metadata file (see below)
+#'    mjolnir_agnoments (the standard name of the sample during the pipeline)
+#'    must be unique, it must not be the same in different ngsfiles.
+#'    lib_prefix and R1_filenames must be the same length
+#' Scenario 2. The samples are multiplexed but for each library we have more
+#'    than two raw data files. For example, when your library has been
+#'    sequenced across multiple lanes on a Novaseq. In this case, RAN has 
+#'    to be run separately for each library and the option
+#'    "multilane" must be set to TRUE. In this case, lib_prefix can only be
+#'    of length one (only one library), but the R1_filenames can be longer.
+#' Scenario 3. The samples are demultiplexed but the primer remains.
+#'    In this case RAN will trimm the primers and separate the sequences
+#'    into fwd and rev files.
+#' 
 #' Starting with multiplexed libraries:
 #' Files required:
 #' - ngsfilter file, needed only for multiplexed libraries
@@ -16,8 +34,12 @@
 #'      fourth with the forward primers and the fifth with the reverse primers.
 #' - metadata file
 #'      a metadata file containing at least two columns required,
-#'      'original_samples' and 'mjolnir_agnomens' (fastq_name_R1 for demultiplexed
-#'       libraries), and named as <experiment identifier>_metadata.tsv.
+#'      'original_samples' and 'mjolnir_agnomens' (fastq_name_R1 for
+#'      demultiplexed libraries), and named as
+#'      <experiment identifier>_metadata.tsv.
+#' Important: when the same library has different sequencing lanes (NovaSeq),
+#' RAN has to be run separately for each library and the option
+#' "multilane" must be set to TRUE.
 #' 
 #' Starting with demultiplexed samples:
 #' If samples are already demultiplexed primers need to be set
@@ -59,6 +81,10 @@
 #'
 #' @param R2_motif Character string that distinguishes the reverse line file from
 #' the forward.
+#' 
+#' @param multilane Logical. If FALSE, the function will consider that the each library
+#' has only one sequencing lane. If TRUE, only one library is processed at a time.
+#' 
 #'
 #' @export 
 #' 
@@ -85,7 +111,8 @@
 mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                          experiment = NULL, 
                          primer_F="GGWACWRGWTGRACWNTNTAYCCYCC",primer_R="TANACYTCNGGRTGNCCRAARAAYCA",
-                         cores = 1, R1_motif = "_R1", R2_motif = "_R2", ...) {
+                         cores = 1, R1_motif = "_R1", R2_motif = "_R2",
+                         multilane = FALSE, ...) {
 
   if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
@@ -103,6 +130,10 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
     # Print deprecation warning
     warning(paste("The 'lib_prefixes' argument is deprecated. Please use 'lib_prefix' instead.\n",
                   "It's okay by now but don't repeat it, okay?"))
+  }
+  if  (!multilane && length(lib_prefix) != length(R1_filenames)){
+    stop(paste("Error: you have set the multilane to False but there",
+               "are different number of R1_files and lib_prefix"))
   }
   metadata <- read.table(paste0(experiment, "_metadata.tsv"),
                          sep = "\t", header = TRUE)
@@ -167,9 +198,20 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
     if (length(ngsfilter_files) == 0) {
       stop("No ngsfilter file found.")
     }
+    if (multilane) {
+      if (length(lib_prefix)>1){
+        stop(paste("Error: when running with multilane option, only one library",
+                   "can be run at the same time"))
+      }
+      multilane_df <- c()
+    }
     for (i in seq_along(R1_filenames)) {
       # this process is done for each Library in each loop.
-      lib <- lib_prefix[i]
+      if (multilane) {
+        lib <- lib_prefix
+      } else {
+        lib <- lib_prefix[i]
+      }
       R1_file <- R1_filenames[i]
       R2_file <- gsub(R1_motif, R2_motif, R1_file)
       loop <- 1
@@ -197,10 +239,23 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
 
 
         # these can be multivalue in case that the sem combi is found multiple times
-        fwd_outfile <- paste0(metadata$original_samples[metadata$mjolnir_agnomens %in% ngsfile$V2[sample_num]], # nolint: line_length_linter.
-                              R1_motif,
-                              ".fastq")
-        rev_outfile <- gsub(R1_motif, R2_motif, fwd_outfile)
+        filename <- metadata$original_samples[metadata$mjolnir_agnomens %in% ngsfile$V2[sample_num]]
+        fwd_outfile <- paste0(filename, # nolint: line_length_linter.
+                              R1_motif,".fastq")
+        rev_outfile <- gsub(R1_motif, R2_motif, fwd_outfile, fixed = TRUE)
+        fwd_outfile <- gsub("..fastq", ".fastq", fwd_outfile, fixed = TRUE)
+        rev_outfile <- gsub("..fastq", ".fastq", rev_outfile, fixed = TRUE)
+        if(multilane) {
+          fwd_outfile_lane <- paste0(fwd_outfile, "_lanefwd_", i)
+          rev_outfile_lane <- paste0(rev_outfile, "_lanerev_", i)
+          multilane_df <- rbind(multilane_df,
+                                data.frame(name = c(fwd_outfile, rev_outfile),
+                                           lane = c(i, i),
+                                           lane_name = c(fwd_outfile_lane,
+                                                         rev_outfile_lane)))
+          fwd_outfile <- fwd_outfile_lane
+          rev_outfile <- rev_outfile_lane
+        }
         fwd_primer <- ngsfile$V4[sample_num]
         rev_primer <- ngsfile$V5[sample_num]
         temp_file_R1 <- paste0('tag1_temp01.fastq')
@@ -294,6 +349,14 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                           "rm ", temp_file_R1, " ; rm ", temp_file_R2, " ; ")
         system(cutadapt_command_tag, wait = TRUE, intern = TRUE)
         system(cutadapt_command_primers, wait = TRUE, intern = TRUE)
+        if(multilane) {
+          for(final_file in unique(multilane_df$name)) {
+            system(paste0("cat ",
+                          paste0(multilane$lane_name[multilane_df$name == final_file],
+                                 collapse = " "),
+                          ">", final_file))
+          }
+        }
       }
     }
   }
