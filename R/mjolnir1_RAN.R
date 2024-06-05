@@ -167,6 +167,8 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
       rev_outfile <- paste0(agnomens[j],
                             R2_motif,
                             ".fastq")
+      fwd_outfile <- gsub("..fastq", ".fastq", fwd_outfile, fixed = TRUE)
+      rev_outfile <- gsub("..fastq", ".fastq", rev_outfile, fixed = TRUE)
       if (R1_file == fwd_outfile) {
         stop(paste("error: fastq_name_R1 ->", R1_file, " and ",
                    "original_samples ->", fwd_outfile, " are the same. ",

@@ -101,6 +101,13 @@ mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320
   fastqR1_list <- paste0(metadata$original_samples,
                          R1_motif,
                          ".fastq")
+  fastqR2_list <- paste0(metadata$original_samples,
+                         R2_motif,
+                         ".fastq")
+
+  fastqR1_list <- gsub("..fastq", ".fastq", fastqR1_list, fixed = TRUE)
+  fastqR2_list <- gsub("..fastq", ".fastq", fastqR2_list, fixed = TRUE)
+      
   agnomens <-  metadata$mjolnir_agnomens
   before_FREYJA <- mclapply(fastqR1_list, function(prefix){
     return(data.frame(file=prefix,
@@ -114,7 +121,7 @@ mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320
   for (i in seq_along(agnomens)) {
     print(fastqR1_list[i])
     filtering_commands <- c(filtering_commands,paste0(
-      "obi import --fastq-input ",gsub(R1_motif,R2_motif,fastqR1_list[i]), " ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads2 ; ",
+      "obi import --fastq-input ",fastqR2_list[i], " ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads2 ; ",
       "obi import --fastq-input ",fastqR1_list[i], " ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads1 ; ",
       "obi alignpairedend -R ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads2 ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads1 ", tmp, experiment,"_",agnomens[i],"_FREYJA/aligned_seqs ; ",
       ifelse(remove_DMS,paste0("obi rm ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads1 ; obi rm ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads2 ; "),""),
