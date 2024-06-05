@@ -303,6 +303,11 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
         loop <- loop + 1
         R1_file_temp <- paste0(lib, 'untrimmed', loop, R1_motif, '.fastq')
         R2_file_temp <- paste0(lib, 'untrimmed', loop, R2_motif, '.fastq')
+        if(multilane) {
+          R1_file_temp <- paste0("lane_", i, "_", R1_file_temp)
+          R2_file_temp <- paste0("lane_", i, "_", R2_file_temp)
+        }
+
         if (fwd_tag != rev_tag) {
           # if this is the case then is a little bit more complex
           # we need to run cutadapt twice changing the order of sample_tags and then concatenate files
@@ -330,6 +335,11 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
           loop <- loop + 1
           R1_file_temp <- paste0(lib, 'untrimmed', loop, R1_motif, '.fastq')
           R2_file_temp <- paste0(lib, 'untrimmed', loop, R2_motif, '.fastq')
+        if(multilane) {
+          R1_file_temp <- paste0("lane_", i, "_", R1_file_temp)
+          R2_file_temp <- paste0("lane_", i, "_", R2_file_temp)
+        }
+
 
         }
 
