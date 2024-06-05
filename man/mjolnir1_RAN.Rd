@@ -13,6 +13,7 @@ mjolnir1_RAN(
   cores = 1,
   R1_motif = "_R1",
   R2_motif = "_R2",
+  multilane = FALSE,
   ...
 )
 }
@@ -43,31 +44,77 @@ the reverse.}
 
 \item{R2_motif}{Character string that distinguishes the reverse line file from
 the forward.}
+
+\item{multilane}{Logical. If FALSE, the function will consider that the each library
+has only one sequencing lane. If TRUE, only one library is processed at a time.}
 }
 \description{
 RAN function will prepare the FASTQ raw data for every sample without sample
 tags and primers. The R1 output files will contain all forward sequences and
-R2 the reverse sequences.
+R2 the reverse sequences. Please, read the Details section before running.
 }
 \details{
-If samples are already demultiplexed primers need to be set or LERAY_XT primers
-for COI will be used by default. Also RAN will read the
-names of each individual R1 fastq files from a column in the LIBX_metadata.tsv
-file, called fastq_name_R1. In the metadata table, each sample in the
-original_samples column must have a their corresponding fastq_name_R1 and
-mjolnir_agnomen (LIBX_sample_XXX).
-If the fastq_name_R1. column is not in the metadata, RAN will use the lib_prefix.
+RAN considers the following scenarios:
+
+- \bold{Scenario 1}. The samples are multiplexed in Libraries.
+   Each library has only two raw .fastq(.gz), R1 and R2.
+   For each library there must be one ngsfile (see below)
+   and for the whole experiment only one metadata file (see below).
+   mjolnir_agnomens (the standard name of the sample during the pipeline)
+   must be unique, it must not be the same in different ngsfiles.
+   \emph{lib_prefix} and \emph{R1_filenames} must be the same length.
+
+- \bold{Scenario 2}. The samples are multiplexed but for each library we have more
+   than two raw data files. For example, when your library has been
+   sequenced across multiple lanes on a Novaseq. In this case, RAN has
+   to be run separately for each library and the option
+   \emph{multilane} must be set to TRUE. In this case, \emph{lib_prefix} can only be
+   of length one (only one library), but the \emph{R1_filenames} can be longer.
+
+- \bold{Scenario 3}. The samples are demultiplexed but the primer remains.
+   In this case RAN will trimm the primers and separate the sequences
+   into fwd and rev files.
+
+
+\bold{Starting with multiplexed libraries:}
+
 Files required:
-- ngsfilter file, needed only for multiplexed libraries
+
+- \emph{ngsfilter file}. Needed only for multiplexed libraries
      For each library, a ngsfilter file is needed and must be named
-     ngsfilter_<library identifier>.tsv. This must contain five tab-separated
-     columns and no header. The first column with the library identifier, the
-     second with the mjolnir_agnomens, the third with the sample tags, the
+     \bold{ngsfilter_<library identifier>.tsv}. This must contain five tab-separated
+     columns and no header. The first column with the library identifier
+     (four charachter identifier), the second with the mjolnir_agnomens,
+     the third with the sample tags, the
      fourth with the forward primers and the fifth with the reverse primers.
-- metadata file
-     a metadata file containing at least two columns required,
-     'original_samples' and 'mjolnir_agnomens' (fastq_name_R1 for demultiplexed
-      libraries), and named as <experiment identifier>_metadata.tsv.
+
+- \emph{metadata file}.
+     A metadata file containing at least two columns required,
+     "original_samples" and "mjolnir_agnomens" ("fastq_name_R1" for
+     demultiplexed libraries, see below), and named as
+     \bold{<experiment identifier>_metadata.tsv}.
+
+Important: when the same library has different sequencing lanes (NovaSeq),
+RAN has to be run separately for each library and the option
+\emph{multilane} must be set to TRUE.
+
+
+\bold{Starting with demultiplexed samples:}
+
+If samples are already demultiplexed, primers need to be set
+(\emph{primer_F} & \emph{primer_R}) or LERAY_XT primers
+for COI will be used by default.
+
+Files required:
+
+- \emph{metadata file}. RAN will read the
+     names of each individual R1 fastq files (full name including extension)
+     from a column in the \bold{<experiment identifier>_metadata.tsv}
+     file, called "fastq_name_R1". In the metadata table, each sample in the
+     "original_samples" column must have a their corresponding fastq_name_R1 and
+     "mjolnir_agnomen" (LIBX_sample_XXX, i.e LIBA_sample_001).
+     If the "fastq_name_R1" column is not in the metadata, RAN will use the
+     \emph{lib_prefix}.
 }
 \examples{
 library(mjolnir)
