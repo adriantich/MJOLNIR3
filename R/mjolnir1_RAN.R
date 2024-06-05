@@ -349,15 +349,15 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                           "rm ", temp_file_R1, " ; rm ", temp_file_R2, " ; ")
         system(cutadapt_command_tag, wait = TRUE, intern = TRUE)
         system(cutadapt_command_primers, wait = TRUE, intern = TRUE)
-        if(multilane) {
-          for(final_file in unique(multilane_df$name)) {
-            system(paste0("cat ",
-                          paste0(multilane$lane_name[multilane_df$name == final_file],
-                                 collapse = " "),
-                          ">", final_file))
-          }
         }
       }
+    }
+    if(multilane) {
+      for(final_file in unique(multilane_df$name)) {
+        system(paste0("cat ",
+                      paste0(multilane_df$lane_name[multilane_df$name == final_file],
+                            collapse = " "),
+                      ">", final_file))
     }
   }
 
