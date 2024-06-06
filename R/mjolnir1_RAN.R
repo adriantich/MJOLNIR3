@@ -99,6 +99,12 @@
 #' @param multilane Logical. If FALSE, the function will consider that the each library
 #' has only one sequencing lane. If TRUE, only one library is processed at a time.
 #' 
+#' @param tag_error Numeric. From 0 (no errors allowed) to 1. will determine the
+#' proportion of nucleotides that can be different in the sample tags.
+#' 
+#' @param primer_error Numeric. From 0 (no errors allowed) to 1. will determine the
+#' proportion of nucleotides that can be different in the primers.
+#' 
 #'
 #' @export 
 #' 
@@ -120,13 +126,13 @@
 #' cores <- 7
 #'
 #' mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
-#'              cores = cores, R1_motif = "_R1", R2_motif = "_R2")
+#'              cores = cores, R1_motif = "_R1", R2_motif = "_R2", tag_error = 0, primer_error = 0.1)
 
 mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                          experiment = NULL, 
                          primer_F="GGWACWRGWTGRACWNTNTAYCCYCC",primer_R="TANACYTCNGGRTGNCCRAARAAYCA",
                          cores = 1, R1_motif = "_R1", R2_motif = "_R2",
-                         multilane = FALSE, ...) {
+                         multilane = FALSE, tag_error = 0, primer_error = 0.1, ...) {
 
   if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
@@ -177,7 +183,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                    "You can use .fastq.gz files as input instead."))
       }
       cutadapt_command_primers <- paste0(cutadapt_command_primers,
-                                        "cutadapt -e 0.1 ", # allow 0.1 errors for primers in ngsfilter was total of 2
+                                        "cutadapt -e ", primer_error, # allow 0.1 errors for primers in ngsfilter was total of 2
                                         # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                         " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                         "-j ", cores, # number of cores allowed # nolint: line_length_linter.
@@ -188,8 +194,8 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                         " ", R1_file, " ", R2_file, " ; ") # input files # nolint: line_length_linter.
       if (primer_F != primer_R) {
         cutadapt_command_primers <- paste0(cutadapt_command_primers,
-                                          "cutadapt -e 0.1 ", # allow 0.1 errors for primers in ngsfilter was total of 2
-                                          # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
+                                          "cutadapt -e ", primer_error, # allow 0.1 errors for primers in ngsfilter was total of 2
+                                        # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                           " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                           "-j ", cores, # number of cores allowed # nolint: line_length_linter.
                                           " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
@@ -282,7 +288,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
         cutadapt_command_primers <- c()
         
         cutadapt_command_tag <- paste0(cutadapt_command_tag,
-                                        "cutadapt -e 0 ", # allow 0 errors
+                                        "cutadapt -e ", tag_error, # allow 0 errors
                                         "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                         " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                         "-j ", cores, # number of cores allowed # nolint: line_length_linter.
@@ -313,7 +319,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
           # we need to run cutadapt twice changing the order of sample_tags and then concatenate files
           cutadapt_command_tag <- paste0(cutadapt_command_tag, # this is the first command
                                           # the second command change the order of sample_tags
-                                          "cutadapt -e 0 ", # allow 0 errors
+                                         "cutadapt -e ", tag_error, # allow 0 errors
                                           "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required
                                           " --no-indels ", # no indels allowed
                                           "-j ", cores, # number of cores allowed
@@ -345,7 +351,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
 
         for (j in seq_len(length(sample_num))) {
           cutadapt_command_primers <- paste0(cutadapt_command_primers,
-                                            "cutadapt -e 0.1 ", # allow 0.1 errors for primers in ngsfilter was total of 2
+                                            "cutadapt -e ", primer_error, # allow 0.1 errors for primers in ngsfilter was total of 2
                                             # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                             " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                             "-j ", cores, # number of cores allowed # nolint: line_length_linter.
@@ -356,7 +362,7 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                             " ", temp_file_R1, " ", temp_file_R2, " ; ") # input files # nolint: line_length_linter.
           if (fwd_tag != rev_tag) {
             cutadapt_command_primers <- paste0(cutadapt_command_primers,
-                                              "cutadapt -e 0.1 ", # allow 0.1 errors for primers in ngsfilter was total of 2
+                                              "cutadapt -e ", primer_error, # allow 0.1 errors for primers in ngsfilter was total of 2
                                               # "-O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                               " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                               "-j ", cores, # number of cores allowed # nolint: line_length_linter.

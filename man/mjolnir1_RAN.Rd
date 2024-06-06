@@ -14,12 +14,14 @@ mjolnir1_RAN(
   R1_motif = "_R1",
   R2_motif = "_R2",
   multilane = FALSE,
+  tag_error = 0,
+  primer_error = 0.1,
   ...
 )
 }
 \arguments{
 \item{R1_filenames}{Character vector with the names of the forward fastq or
-fastq.gz files.}
+fastq.gz files. Only needed for multiplexed libraries.}
 
 \item{lib_prefix}{Character vector. Acronym for each sequencing library. This
 acronym must be of 4 characters in capital letters. Do not mix up library and
@@ -47,6 +49,12 @@ the forward.}
 
 \item{multilane}{Logical. If FALSE, the function will consider that the each library
 has only one sequencing lane. If TRUE, only one library is processed at a time.}
+
+\item{tag_error}{Numeric. From 0 (no errors allowed) to 1. will determine the
+proportion of nucleotides that can be different in the sample tags.}
+
+\item{primer_error}{Numeric. From 0 (no errors allowed) to 1. will determine the
+proportion of nucleotides that can be different in the primers.}
 }
 \description{
 RAN function will prepare the FASTQ raw data for each sample with the sample
@@ -135,5 +143,5 @@ experiment <- 'ULOY'
 cores <- 7
 
 mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
-             cores = cores, R1_motif = "_R1", R2_motif = "_R2")
+             cores = cores, R1_motif = "_R1", R2_motif = "_R2", tag_error = 0, primer_error = 0.1)
 }

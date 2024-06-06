@@ -4,7 +4,7 @@
 \alias{mjolnir7_LOKI}
 \title{LOKI: LULU Overseeing with Kinship Identification}
 \usage{
-mjolnir7_LOKI(experiment = NULL, min_id = 0.84, vsearchpath = NULL, ...)
+mjolnir7_LOKI(experiment = NULL, min_id = 0.84, ...)
 }
 \arguments{
 \item{experiment}{Character string. Acronym for the experiment. This
@@ -24,8 +24,6 @@ from the query needs to match the target. Consequently, using values lower
 than --id 0.5 is not likely to capture more weakly matching targets. The 
 pairwise identity is by default defined as the number of 
 (matching columns) / (alignment length - terminal gaps)}
-
-\item{vsearchpath}{Character string specifying the PATH to vsearch.}
 }
 \description{
 LOKI is a convenient wrapper of LULU for the MJOLNIR3 metabarcoding pipeline.
