@@ -95,7 +95,7 @@ mjolnir5_THOR <- function(experiment = NULL, cores = 1,
     # Print deprecation warning
     warning("The 'lib' argument is deprecated. Please use 'experiment' instead.")
   }
-  if ((exists("tax_dms_name") | exists("tax_dms_name")) && is.null(tax_db)) {
+  if ((exists("tax_dms_name") | exists("tax_dir")) && is.null(tax_db)) {
     # Print deprecation warning
     warning("The 'tax_dms_name' and the 'tax_dir' arguments are deprecated. Please use only 'tax_db' instead.")
     tax_db <- paste0(normalizePath(tax_dir), "/", tax_dms_name)
@@ -109,7 +109,9 @@ mjolnir5_THOR <- function(experiment = NULL, cores = 1,
       fasta_file <- readLines(paste0(experiment,"_ODIN.fasta"))
       
       seqs <- grep(">",fasta_file)
-      seq_rank <- sort(seqs %% cores)
+      # seq_rank <- sort(seqs %% cores)
+      # create a vector of length equal to seqs but that repeats the sequence from 1 to cores
+      seq_rank <- rep(1:cores, ceiling(length(seqs) / cores))[seq_along(seqs)]
       
       for (i in 1:cores) {
         if (i == 1) {

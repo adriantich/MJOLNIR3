@@ -70,7 +70,7 @@
 #' 
 #'
 #' @param R1_filenames Character vector with the names of the forward fastq or
-#' fastq.gz files.
+#' fastq.gz files. Only needed for multiplexed libraries.
 #'
 #' @param lib_prefix Character vector. Acronym for each sequencing library. This
 #' acronym must be of 4 characters in capital letters. Do not mix up library and
