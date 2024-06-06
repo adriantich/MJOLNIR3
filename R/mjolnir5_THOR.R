@@ -111,7 +111,7 @@ mjolnir5_THOR <- function(experiment = NULL, cores = 1,
       seqs <- grep(">",fasta_file)
       # seq_rank <- sort(seqs %% cores)
       # create a vector of length equal to seqs but that repeats the sequence from 1 to cores
-      seq_rank <- rep(1:cores, ceiling(length(seqs) / cores))[seq_along(seqs)]
+      seq_rank <- sort(rep(1:cores, ceiling(length(seqs) / cores))[seq_along(seqs)])
       
       for (i in 1:cores) {
         if (i == 1) {
