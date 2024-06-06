@@ -508,3 +508,19 @@ numts<-function(datas, is_metazoa=FALSE, motu, datas_length) {
 
   return(numts_seqs)
 }
+
+
+count_reads <- function(pattern = ".fasta", sizename = "size"){
+  fasta_files <- list.files('.', pattern)
+  sub_pattern <- paste0(".*",sizename,"=([0-9]+).*")
+  summary_df <- data.frame()
+  for (file in fasta_files){
+    fasta_data <- readLines(file)
+    seqs <- grep(">",fasta_data)
+    summary_df <- rbind(summary_df,
+                        data.frame(file = file,
+                                   reads = sum(as.numeric(gsub(sub_pattern,"\\1",fasta_data[seqs]))),
+                                   sequences = length(seqs)))
+  }
+  return(summary_df)
+}

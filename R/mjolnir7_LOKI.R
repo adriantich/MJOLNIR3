@@ -28,8 +28,6 @@
 #' pairwise identity is by default defined as the number of 
 #' (matching columns) / (alignment length - terminal gaps)
 #' 
-#' @param vsearchpath Character string specifying the PATH to vsearch.
-#' 
 #' @export 
 #' 
 #' @examples 
@@ -79,8 +77,8 @@
 #' # Run LOKI
 #' mjolnir7_LOKI(experiment = experiment, min_id = .84)
 
-mjolnir7_LOKI <- function(experiment = NULL, min_id = .84, 
-                          vsearchpath = NULL, ...){
+mjolnir7_LOKI <- function(experiment = NULL, min_id = .84,
+                          ...){
 
   if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
