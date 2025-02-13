@@ -116,6 +116,7 @@ mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320
 
   to_retain <- do.call("rbind",before_FREYJA)
   fastqR1_list <- fastqR1_list[to_retain$num_seqs > 0]
+  fastqR2_list <- fastqR2_list[to_retain$num_seqs > 0]
   agnomens <- agnomens[to_retain$num_seqs > 0]
   # Create obitool commands
   for (i in seq_along(agnomens)) {
