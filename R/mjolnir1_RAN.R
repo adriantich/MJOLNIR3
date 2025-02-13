@@ -229,6 +229,11 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
     }
     for (i in seq_along(R1_filenames)) {
       # this process is done for each Library in each loop.
+      if (!('original_samples' %in% names(metadata)) ||
+          !('mjolnir_agnomens' %in% names(metadata))) {
+        stop(paste("Error: the metadata file must contain the column",
+                   "original_samples and mjolnir_agnomens"))
+      }
       if (multilane) {
         lib <- lib_prefix
       } else {
