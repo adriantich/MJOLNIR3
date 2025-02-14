@@ -267,6 +267,13 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
 
         # these can be multivalue in case that the sem combi is found multiple times
         filename <- metadata$original_samples[metadata$mjolnir_agnomens %in% ngsfile$V2[sample_num]]
+        if (length(filename) == 0) {
+          stop(paste("ERROR: mjolnir_agnomens not found in metadata file for",
+                     "the following sample:", ngsfile$V2[sample_num],
+                     "\nPlease check the metadata file and ensure that ",
+                     "the mjolnir_agnomens from the ngsfile are found ",
+                     "in the metadata."))
+        }
         fwd_outfile <- paste0(filename, # nolint: line_length_linter.
                               R1_motif,".fastq")
         rev_outfile <- gsub(R1_motif, R2_motif, fwd_outfile, fixed = TRUE)
