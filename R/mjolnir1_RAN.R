@@ -290,6 +290,8 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
           fwd_outfile <- fwd_outfile_lane
           rev_outfile <- rev_outfile_lane
         }
+        fwd_primer_untrimmed <- gsub(".fastq","_untrimmed_seqs.fastq",fwd_outfile)
+        rev_primer_untrimmed <- gsub(".fastq","_untrimmed_seqs.fastq",rev_outfile)
         fwd_primer <- ngsfile$V4[sample_num]
         rev_primer <- ngsfile$V5[sample_num]
         temp_file_R1 <- paste0('tag1_temp01.fastq')
@@ -341,11 +343,13 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                           " --untrimmed-paired-output ", R2_file_temp, # save those reads that have not been assigned to the sample # nolint: line_length_linter.
                                           " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja
                                           "-g ", rev_tag, " -G ", fwd_tag, # these are the sample_tags
-                                          " -o temp_fileR1.fastq -p temp_fileR2.fastq", # sample names as original
+                                          " -o temp_filerev.fastq -p temp_filefwd.fastq", # sample names as original
                                           " ", R1_file, " ", R2_file, " ; ",
                                           # now concatenate and remove
-                                          "cat temp_fileR1.fastq >>", temp_file_R1, " ; rm temp_file1.fastq ; ",
-                                          "cat temp_fileR2.fastq >>", temp_file_R2, " ; rm temp_file2.fastq ; ")
+                                          # remember that if this is running we know that the first roung R1 had fwd
+                                          # when trimming the primers only one round will pass, here we nee to have it sorted
+                                          "cat temp_filefwd.fastq >>", temp_file_R1, " ; rm temp_filefwd.fastq ; ",
+                                          "cat temp_filerev.fastq >>", temp_file_R2, " ; rm temp_filerev.fastq ; ")
           cutadapt_command_tag <- paste0(cutadapt_command_tag,
                                           " rm ", R1_file, " ; rm ", R2_file, " ; ")
           R1_file <- R1_file_temp
@@ -353,10 +357,10 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
           loop <- loop + 1
           R1_file_temp <- paste0(lib, 'untrimmed', loop, R1_motif, '.fastq')
           R2_file_temp <- paste0(lib, 'untrimmed', loop, R2_motif, '.fastq')
-        if(multilane) {
-          R1_file_temp <- paste0("lane_", i, "_", R1_file_temp)
-          R2_file_temp <- paste0("lane_", i, "_", R2_file_temp)
-        }
+          if(multilane) {
+            R1_file_temp <- paste0("lane_", i, "_", R1_file_temp)
+            R2_file_temp <- paste0("lane_", i, "_", R2_file_temp)
+          }
 
 
         }
@@ -367,25 +371,33 @@ mjolnir1_RAN <- function(R1_filenames = "", lib_prefix = "",
                                             # " -O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                             " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                             "-j ", cores, # number of cores allowed # nolint: line_length_linter.
-                                            " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
+                                            # " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
+                                            " --untrimmed-output ", fwd_primer_untrimmed[j], # save those reads that have not been assigned to the sample # nolint: line_length_linter.
+                                            " --untrimmed-paired-output ", rev_primer_untrimmed[j], # save those reads that have not been assigned to the sample # nolint: line_length_linter.
                                             " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
                                             "-g ", fwd_primer[j], " -G ", rev_primer[j], # these are the primers # nolint: line_length_linter.
                                             " -o ", fwd_outfile[j], " -p ", rev_outfile[j], # sample names as original # nolint: line_length_linter.
                                             " ", temp_file_R1, " ", temp_file_R2, " ; ") # input files # nolint: line_length_linter.
-          if (fwd_tag != rev_tag) {
+          if (fwd_tag == rev_tag) {
             cutadapt_command_primers <- paste0(cutadapt_command_primers,
                                               "cutadapt -e ", primer_error, # allow 0.1 errors for primers in ngsfilter was total of 2
                                               # " -O ", min(c(nchar(fwd_tag), nchar(rev_tag))), # min overlap required # nolint: line_length_linter.
                                               " --no-indels ", # no indels allowed # nolint: line_length_linter.
                                               "-j ", cores, # number of cores allowed # nolint: line_length_linter.
-                                              " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
+                                              # " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
+                                              " --untrimmed-output temp_rev_untrimmed_primmer.fastq", # save those reads that have not been assigned to the sample # nolint: line_length_linter.
+                                              " --untrimmed-paired-output temp_fwd_untrimmed_primmer.fastq", # save those reads that have not been assigned to the sample # nolint: line_length_linter.
                                               " --max-n=0.5 ", # I allow a max of half of the read being N. this will be solved by freyja # nolint: line_length_linter.
                                               "-g ", rev_primer[j], " -G ", fwd_primer[j], # these are the primers # nolint: line_length_linter.
                                               " -o temp_fileR1_rev.fastq -p temp_fileR2_fwd.fastq", # sample names as original # nolint: line_length_linter.
-                                              " ", temp_file_R1, " ", temp_file_R2, " ; ",
+                                              # " ", temp_file_R1, " ", temp_file_R2, " ; ",
+                                              " ", fwd_primer_untrimmed[j], " ", rev_primer_untrimmed[j], " ; ",
                                               # now concatenate and remove
                                               "cat temp_fileR1_rev.fastq >>", rev_outfile[j], " ; rm temp_fileR1_rev.fastq ; ",
-                                              "cat temp_fileR2_fwd.fastq >>", fwd_outfile[j], " ; rm temp_fileR2_fwd.fastq ; ")
+                                              "cat temp_fileR2_fwd.fastq >>", fwd_outfile[j], " ; rm temp_fileR2_fwd.fastq ; ",
+                                              "mv temp_rev_untrimmed_primmer.fastq ", rev_primer_untrimmed[j], " ; ",
+                                              "mv temp_fwd_untrimmed_primmer.fastq ", fwd_primer_untrimmed[j], " ; "
+                                              )
 
           }
         }
