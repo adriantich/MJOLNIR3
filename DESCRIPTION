@@ -14,6 +14,8 @@ Description: MJOLNIR Metabarcoding Joining Obitools & Linkage Networks In R
     - Pseudogene removal with LULU.
 License: GPL-3
 Depends: parallel,lulu,Biostrings
+Imports: Rcpp
+LinkingTo: Rcpp
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.1

@@ -345,7 +345,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   #####
   
   # list files
-  sample_files <- list.files(pattern="^[a-zA-Z0-9]{4}_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_HELA.fasta$")
+  sample_files <- list.files(pattern=paste0("^",experiment,"_.*_HELA.fasta$"))
   sample_list <- gsub("_HELA.fasta", "", sample_files)
   
   if (file.exists("summary_HELA.RData")) {
@@ -379,7 +379,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
                              sample_files)
       }
     } else {
-      sample_files <- list.files(pattern = "^[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_ODIN_ESV.*.fasta$")
+      sample_files <- list.files(pattern = paste0("^",experiment,"_.*_ODIN_ESV.*.fasta$"))
       sample_list <- gsub("_ODIN_ESV.*.fasta", "", sample_files)
     }
   }
@@ -420,7 +420,20 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   # annotate
   annotate_obidms(experiment)
   
-  
+  ############################################
+  annotate_samples(sample_list, sample_files, cores, experiment)
+  cat_samples(sample_list, experiment)
+  dereplicate_vsearch(experiment)
+  rename_sequences(experiment)
+  # export to csv and read to apply filters
+  if (algorithm == "dnoise"){
+    filetab <- paste0(experiment, "_ODIN_ESV.csv")
+  } else{
+    filetab <- paste0(experiment, "_ODIN_seqs.csv")
+  }
+  table_creation()
+  ############################################
+
   # checkpoint
   output <- system(paste0("obi ls ", experiment, "_ODIN | grep 'Line count'"), intern = T, wait = T)
   values <- as.numeric(gsub(".*count: ", "", output))
@@ -864,5 +877,56 @@ annotate_obidms <- function(experiment) {
          intern = TRUE, wait = TRUE)
 }
 
+############################################
+# new part
+annotate_samples <- function(sample_list, sample_files, cores, experiment) {
+  X <- NULL
+  for (file in sample_list) {
+    input_file <- sample_files[grep(file, sample_files)]
+    X <- c(X,
+          paste0("sed 's/;$/;sample=",gsub(paste0("^", experiment, "_"), "", file),"/g' ",input_file,
+                  " > ", file, "_ODIN_sample_annotated.fasta ; "))
+    
+  }
+  mclapply(X, function(x) system(x,intern = TRUE, wait = TRUE), mc.cores = cores)
+}
+cat_samples <- function(sample_list, experiment) {
+  system(paste0("cat *_ODIN_sample_annotated.fasta > ", experiment, "_ODIN_samples_joined.fasta; rm *_ODIN_sample_annotated.fasta"),
+        intern = TRUE, wait = TRUE)
+}
+
+dereplicate_vsearch <- function(experiment){
+  system(paste0("vsearch ",
+                "--fastx_uniques ", experiment, "_ODIN_samples_joined.fasta ",
+                "--sizeout ",
+                "--fastaout ", experiment, "_ODIN_derep_seqs.fasta"),
+        intern = TRUE, wait = TRUE)
+}
+
+Rcpp::sourceCpp(system.file("src/rename_fasta.cpp", package = "mjolnir"))
+Rcpp::sourceCpp(system.file("src/seq2tab.cpp", package = "mjolnir"))
+
+rename_fasta <- function(input_file, output_file, experiment) {
+  .Call('_mjolnir_rename_fasta', PACKAGE = 'mjolnir', input_file, output_file, experiment)
+}
+seq2tab <- function(input_table_file, fasta_file, id_column) {
+  .Call('_mjolnir_seq2tab', PACKAGE = 'mjolnir', input_table_file, fasta_file, id_column)
+}
+
+rename_sequences <- function(experiment) {
+  input_file <- paste0(experiment, "_ODIN_derep_seqs.fasta")
+  output_file <- paste0(experiment, "_ODIN_derep_seqs_renamed.fasta")
+  rename_fasta(input_file, output_file, experiment)
+}
+table_creation <- function(experiment, filetab){
+  system(paste0("vsearch ",
+                "--search_exact ", experiment, "_ODIN_samples_joined.fasta ",
+                "--db ", experiment, "_ODIN_derep_seqs_renamed.fasta ",
+                "--otutab ", filetab),
+        intern = TRUE, wait = TRUE)
+  # Example usage of the C++ function
+  fasta_file <- paste0(experiment, "_ODIN_derep_seqs_renamed.fasta")
+  seq2tab(filetab, fasta_file, "ID")
+}
 
 relabund <- function(x,min_relative) if (sum(x)>0) x/sum(x) < min_relative else FALSE
