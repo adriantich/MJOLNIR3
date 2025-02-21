@@ -400,61 +400,65 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   #####
   # 2: D,DS,SD,S,SaD -> cat all fasta
   #####
+
+  # write sample label
+  annotate_samples(sample_list, sample_files, cores, experiment)
+  # cat all samples into one fasta
+  cat_samples(sample_list, experiment)
   
-  # import fasta files into obidms and annotate with sample name
-  samples_2_obidms(sample_list, sample_files, cores)
+  # # import fasta files into obidms and annotate with sample name
+  # samples_2_obidms(sample_list, sample_files, cores)
   
-  # cat all samples into one obidms
-  cat_samples_obidms(sample_list, experiment)
+  # # cat all samples into one obidms
+  # cat_samples_obidms(sample_list, experiment)
   
   #####
   # 3: D,DS,SD,S,SaD -> dereplicate
   #####
   
-  dereplicate_obidms(experiment)
+  # dereplicate
+  dereplicate_vsearch(experiment)
+  # dereplicate_obidms(experiment)
   
   #####
   # 4: D,DS,SD,S,SaD -> annotate new names
   #####
   
-  # annotate
-  annotate_obidms(experiment)
-  
-  ############################################
-  annotate_samples(sample_list, sample_files, cores, experiment)
-  cat_samples(sample_list, experiment)
-  dereplicate_vsearch(experiment)
+  # rename sequences
   rename_sequences(experiment)
-  # export to csv and read to apply filters
+  # # annotate
+  # annotate_obidms(experiment)
+  
+  # export to csv
   if (algorithm == "dnoise"){
     filetab <- paste0(experiment, "_ODIN_ESV.csv")
   } else{
     filetab <- paste0(experiment, "_ODIN_seqs.csv")
   }
-  table_creation()
-  ############################################
+  table_creation(experiment, filetab)
 
-  # checkpoint
-  output <- system(paste0("obi ls ", experiment, "_ODIN | grep 'Line count'"), intern = T, wait = T)
-  values <- as.numeric(gsub(".*count: ", "", output))
-  version <- gsub(".*# ", "", gsub(": Date.*", "", output))
-  after_2_ODIN <- data.frame(algorithm = algorithm,
-                             version = version,
-                             num_seqs = values)
+  # # checkpoint
+  # output <- system(paste0("obi ls ", experiment, "_ODIN | grep 'Line count'"), intern = T, wait = T)
+  # values <- as.numeric(gsub(".*count: ", "", output))
+  # version <- gsub(".*# ", "", gsub(": Date.*", "", output))
+  # after_2_ODIN <- data.frame(algorithm = algorithm,
+  #                            version = version,
+  #                            num_seqs = values)
   
   
-  # export to csv and read to apply filters
-  if (algorithm == "dnoise"){
-    filetab <- paste0(experiment, "_ODIN_ESV.csv")
-  } else{
-    filetab <- paste0(experiment, "_ODIN_seqs.csv")
-  }
+  # # export to csv and read to apply filters
+  # if (algorithm == "dnoise"){
+  #   filetab <- paste0(experiment, "_ODIN_ESV.csv")
+  # } else{
+  #   filetab <- paste0(experiment, "_ODIN_seqs.csv")
+  # }
   
-  system(paste0("obi export --tab-output --sep ','  -o ",
-                filetab, " ",
-                experiment, "_ODIN/seq_id"),
-         intern = T, wait = T)
-  seqs_abund <- read.csv(filetab, sep = ",", head = TRUE)
+  # system(paste0("obi export --tab-output --sep ','  -o ",
+  #               filetab, " ",
+  #               experiment, "_ODIN/seq_id"),
+  #        intern = T, wait = T)
+  # seqs_abund <- read.csv(filetab, sep = ",", head = TRUE)
+  seqs_abund <- read.csv(filetab, sep = "\t", head = TRUE)
   names(seqs_abund) <- gsub("MERGED_sample.", "", names(seqs_abund))
   if(metadata_table == '') {
     metadata_table <- paste0(experiment, "_metadata.tsv")
@@ -529,6 +533,13 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
       seqs_abund <- paste(paste0(">", seqs_abund$ID), seqs_abund$NUC_SEQ, sep = "\n")
       writeLines(paste0(seqs_abund, collapse = "\n"), paste0(outfile, ".fasta"))
     }
+    rm(seqs_abund)
+  } else {
+     seqs_abund$total_count <- rowSums(seqs_abund[, sample_cols])
+     seqs_abund <- paste(paste0(">", seqs_abund$ID,";size=",seqs_abund$total_count),
+                              seqs_abund$NUC_SEQ, sep = "\n")
+      writeLines(paste0(seqs_abund, collapse = "\n"), paste0(outfile, ".fasta"))
+      rm(seqs_abund)
   }
   
   
@@ -540,12 +551,12 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   if (algorithm == "swarm_dnoise" || algorithm == "swarm" ||
       algorithm == "dnoise_swarm") { 
     message("ODIN will cluster sequences into MOTUs with SWARM.")
-    system(paste0("obi export --fasta-output --only-keys \"COUNT\" ",
-                  experiment, "_ODIN/seq_id > ",outfile,".fasta ; ",
-                  "sed -i 's/COUNT/size/g' ",outfile,".fasta ; ",
-                  "sed -i 's/;//g' ",outfile,".fasta ; ",
-                  "sed -E -i 's/(size=[0-9]*).*/\\1;/g' ", outfile, ".fasta ; ",
-                  "sed -i 's/ /;/g' ",outfile, ".fasta "))
+    # system(paste0("obi export --fasta-output --only-keys \"COUNT\" ",
+    #               experiment, "_ODIN/seq_id > ",outfile,".fasta ; ",
+    #               "sed -i 's/COUNT/size/g' ",outfile,".fasta ; ",
+    #               "sed -i 's/;//g' ",outfile,".fasta ; ",
+    #               "sed -E -i 's/(size=[0-9]*).*/\\1;/g' ", outfile, ".fasta ; ",
+    #               "sed -i 's/ /;/g' ",outfile, ".fasta "))
     system(paste0(swarm, " -d ", d, " -z -t ", cores,
                   " -o ", outfile, "_SWARM_output ",
                   " -s ", outfile, "_SWARM", d, "nc_stats ",
@@ -593,11 +604,11 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
       mc.cores = cores)
     db_total <- do.call(rbind, db_total)
     db_total <- cbind(data.frame(ID = rownames(db_total)), db_total)
-    db_total <- merge(db_total, db[, grepl("ID|NUC_SEQ", names(db))], by = "ID")
+    db_total <- merge(db_total, db[, grepl("ID|sequence", names(db))], by = "ID")
     
     # order the columns
     col_order <- c("ID", "COUNT", "MOTU", names(db)[grepl("sample", names(db))],
-                   "NUC_SEQ")
+                   "sequence")
     db <- db[, col_order]
   }
   
@@ -815,6 +826,34 @@ dnoise_fasta <- function(before_1_ODIN, entropy, cores, sample_list, alpha, min_
   }
 }
 
+dnoise_fasta_2 <- function(entropy, cores, sample_list, alpha, min_reads_ESV, dnoise, run_entropy) {
+  if(entropy[1] == "auto_dataset") {
+    system(paste0("cat *_HELA.fasta >file_for_entropy.fasta ; ",
+                  dnoise, " --fasta_input file_for_entropy.fasta -g"),
+           intern = TRUE, wait = TRUE)
+    entropies  <- read.csv("file_for_entropy.fasta_entropy_values.csv")
+    entropy <- c(entropies[1, 4:6],entropies[1, 1])
+  }
+  for (file in sample_list) {
+    if (!run_entropy) {
+      entropy_file <- ""
+    } else if(entropy[1]=="auto_sample") {
+      entropy_file <- paste0(" -y -m ", entropy[2])
+    } else {
+      entropy_file <- paste0(" -y -e ", paste0(entropy[1:3],
+                                                collapse = ","),
+                              " -m ", entropy[4])
+    }
+    message(paste("ODIN will denoise", file))
+    command <- paste0(dnoise,
+                      " --fasta_input ", file, "_HELA.fasta ",
+                      "--fasta_output ", file, "_ODIN ",
+                      "-a ", alpha, " -c ", cores,
+                      entropy_file, " -r ", min_reads_ESV)
+    system(command,
+            intern = TRUE, wait = TRUE)
+  }
+}
 
 samples_2_obidms <- function(sample_list, sample_files, cores) {
   X <- NULL
