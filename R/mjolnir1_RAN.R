@@ -490,7 +490,7 @@ mjolnir1_RAN <- function(R1_filenames = "",
                " -O ", min(c(nchar(ngsfile$fwd_tags), nchar(ngsfile$rev_tags))), # min overlap required # nolint: line_length_linter.
                " --no-indels ", # no indels allowed # nolint: line_length_linter.
                " -j ", cores, # number of cores allowed # nolint: line_length_linter.
-               " --action = 'none' ", # don't remove the tag taken # nolint: line_length_linter.
+               " --action='none' ", # don't remove the tag taken # nolint: line_length_linter.
                # " --discard-untrimmed ", # discard those reads that have not been assigned to the sample # nolint: line_length_linter.
                " --untrimmed-output ", R1_file, "_untrimmed", # save those reads that have not been assigned to the sample # nolint: line_length_linter.
                " --untrimmed-paired-output ", R2_file, "_untrimmed", # save those reads that have not been assigned to the sample # nolint: line_length_linter.
