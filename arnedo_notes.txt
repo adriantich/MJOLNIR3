@@ -1,0 +1,5 @@
+I have tried to install mjolnir3 in vibra.
+I tried using pip install obitools3 to install it and I found out that there was a problem with the cythonize. As I saw that in the requirements of obitools, cython version was 0.24 and I had 3.0.. I thought that could be a problem with that. So I installed cython through pip (conda was giving me errors)
+
+pip install Cython==0.29.36
+pip install obitools3
