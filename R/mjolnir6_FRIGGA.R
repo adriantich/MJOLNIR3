@@ -90,6 +90,8 @@ mjolnir6_FRIGGA <- function(experiment=NULL, ...){
   # Merge databases
   names(abun_db)[names(abun_db)=="ID"] <- "id"
   names(abun_db)[names(abun_db)=="NUC_SEQ"] <- "sequence"
+  names(ecotag_db)[names(ecotag_db)=="ID"] <- "id"
+  names(ecotag_db)[names(ecotag_db)=="NUC_SEQ"] <- "sequence"
 
   db <- merge(ecotag_db,abun_db,by="id")
 
