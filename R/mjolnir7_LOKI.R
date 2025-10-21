@@ -99,6 +99,9 @@ mjolnir7_LOKI <- function(experiment = NULL, min_id = .84,
   db <- read.table(paste0(experiment,"_FRIGGA.tsv"),sep="\t",head=T,stringsAsFactors = F)
     # Select sample abundance columns
   sample_cols <- grep("sample",names(db))
+  # sort by decreasing total reads
+  total_reads <- rowSums(db[,sample_cols])
+  db <- db[order(-total_reads),]
   otutable_name <-db[,sample_cols]
   rownames(otutable_name) <- db$id
 
