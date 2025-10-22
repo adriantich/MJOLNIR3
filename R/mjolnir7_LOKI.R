@@ -77,7 +77,7 @@
 #' # Run LOKI
 #' mjolnir7_LOKI(experiment = experiment, min_id = .84)
 
-mjolnir7_LOKI <- function(experiment = NULL, min_id = .84,
+mjolnir7_LOKI <- function(experiment = NULL, min_id = .84, discard = TRUE,
                           ...){
 
   if (exists("lib") && is.null(experiment)) {
@@ -86,59 +86,77 @@ mjolnir7_LOKI <- function(experiment = NULL, min_id = .84,
     # Print deprecation warning
     warning("The 'lib' argument is deprecated. Please use 'experiment' instead.")
   }
+  if(!discard){
+    stop("LOKI currently only works with discard = TRUE")
+  }
 
   message("LOKI will produce a pairwise match list for LULU.")
   
   system(paste0("vsearch --usearch_global ",experiment,"_ODIN.fasta --db ",experiment,"_ODIN.fasta --self --id ",min_id," --iddef 1 --userout ",experiment,"_LOKI_match_list.txt -userfields query+target+id --maxaccepts 0 --query_cov .9 --maxhits 10"),intern=T,wait=T)
   message("LOKI will now remove the pseudogenes with LULU.")
 
-  suppressPackageStartupMessages(library("lulu"))
+  # suppressPackageStartupMessages(library("lulu"))
   suppressPackageStartupMessages(library("dplyr"))
 
   #Load the dataset
   db <- read.table(paste0(experiment,"_FRIGGA.tsv"),sep="\t",head=T,stringsAsFactors = F)
     # Select sample abundance columns
   sample_cols <- grep("sample",names(db))
+  id_cols <- which(names(db)=="id")
   # sort by decreasing total reads
   total_reads <- rowSums(db[,sample_cols])
   db <- db[order(-total_reads),]
-  otutable_name <-db[,sample_cols]
+  otutable_name <- db[,c(id_cols,sample_cols)]
+  # otutable_name <- db[,sample_cols]
   rownames(otutable_name) <- db$id
+  write.table(otutable_name,paste0(experiment,"_LOKI_otutable.tsv"),row.names = F,sep="\t",quote = F)
 
-  #Load the matchlist
-  matchlist_name <- read.csv(paste0(experiment,"_LOKI_match_list.txt"),sep="\t",head=F,stringsAsFactors = F)
 
-  #Run LULU
-  curated_result <- lulu(otutable_name, matchlist_name)
+  # Load the matchlist
+  # matchlist_name <- read.csv(paste0(experiment,"_LOKI_match_list.txt"),sep="\t",head=F,stringsAsFactors = F)
 
-  #Get discarded table:
-  discarded_db <- db[db$id %in% curated_result$discarded_otus,]
-  otus_discarded <- curated_result$discarded_otus
+  # Run MUMU
+  # curated_result <- lulu(otutable_name, matchlist_name)
+  system(paste0("mumu --otu_table ",experiment,"_LOKI_otutable.tsv --match_list ",experiment,"_LOKI_match_list.txt --log ",experiment,"_LOKI_mumu.log --new_otu_table ", experiment, "_LOKI_mumu.tsv"),intern=T,wait=T)
+  
+  curated_result <- read.table(paste0(experiment,"_LOKI_mumu.tsv"),sep="\t",head=T,stringsAsFactors = F)
+
+  # Get discarded table:
+  # discarded_db <- db[db$id %in% curated_result$discarded_otus,]
+  # otus_discarded <- curated_result$discarded_otus
+  # num_discarded <- nrow(discarded_db)
+  # write.table(discarded_db,paste0(experiment,"_LOKI_Discarded.tsv"),row.names = F,sep="\t",quote = F)
+  discarded_db <- db[!db$id %in% curated_result$id,]
+  otus_discarded <- discarded_db$id
   num_discarded <- nrow(discarded_db)
   write.table(discarded_db,paste0(experiment,"_LOKI_Discarded.tsv"),row.names = F,sep="\t",quote = F)
 
-  #Get curated table:
-  curated_db <- db[db$id %in% curated_result$curated_otus,]
+  # # Get curated table:
+  # curated_db <- db[db$id %in% curated_result$curated_otus,]
+  # curated_db <- curated_db[order(curated_db$id),]
+  # curated_db[,sample_cols] <- curated_result$curated_table
+  # curated_db$total_reads <- rowSums(curated_result$curated_table)
+  # write.table(curated_db,paste0(experiment,"_LOKI_Curated.tsv"),row.names = F,sep="\t",quote = F)
+  curated_db <- db[db$id %in% curated_result$id,]
   curated_db <- curated_db[order(curated_db$id),]
-  curated_db[,sample_cols] <- curated_result$curated_table
-  curated_db$total_reads <- rowSums(curated_result$curated_table)
+  curated_db$COUNT <- rowSums(curated_db[,sample_cols])
   write.table(curated_db,paste0(experiment,"_LOKI_Curated.tsv"),row.names = F,sep="\t",quote = F)
 
-  #Get fate of deleted taxa
-  deleted_otu_fate <- (curated_result$otu_map[curated_result$otu_map$curated=="merged",])
-  deleted_otu_fate$original <- ""
-  deleted_otu_fate$id_removed <- rownames(deleted_otu_fate)
-  for (i in seq_len(nrow(deleted_otu_fate))){
-    deleted_otu_fate$original[i] <- db$SCIENTIFIC_NAME[db$id==rownames(deleted_otu_fate)[i]]
-  }
-  parents_info <- db[db$id%in%deleted_otu_fate$parent_id,c("id","SCIENTIFIC_NAME","superkingdom_name","kingdom_name","phylum_name","class_name","order_name","family_name")]
-  names(parents_info)[1:2] <- c("parent_id","parent_taxo")
-  deleted_otu_fate <- left_join(deleted_otu_fate,parents_info,by="parent_id")
-  write.table(deleted_otu_fate,paste0(experiment,"_LOKI_Deleted_fate.tsv"),row.names = F,sep="\t",quote = F)
+  # #Get fate of deleted taxa
+  # deleted_otu_fate <- (curated_result$otu_map[curated_result$otu_map$curated=="merged",])
+  # deleted_otu_fate$original <- ""
+  # deleted_otu_fate$id_removed <- rownames(deleted_otu_fate)
+  # for (i in seq_len(nrow(deleted_otu_fate))){
+  #   deleted_otu_fate$original[i] <- db$SCIENTIFIC_NAME[db$id==rownames(deleted_otu_fate)[i]]
+  # }
+  # parents_info <- db[db$id%in%deleted_otu_fate$parent_id,c("id","SCIENTIFIC_NAME","superkingdom_name","kingdom_name","phylum_name","class_name","order_name","family_name")]
+  # names(parents_info)[1:2] <- c("parent_id","parent_taxo")
+  # deleted_otu_fate <- left_join(deleted_otu_fate,parents_info,by="parent_id")
+  # write.table(deleted_otu_fate,paste0(experiment,"_LOKI_Deleted_fate.tsv"),row.names = F,sep="\t",quote = F)
 
   save(file = "summary_LOKI.RData",list = c("num_discarded","otus_discarded"))
 
   message("LOKI is done. He kept ",nrow(curated_db)," MOTUs in the curated database, which He stored in file: ",paste0(experiment,"_LOKI_Curated.tsv"))
-  message("LOKI discarded ",nrow(discarded_db)," MOTUs, which He stored in file: ",paste0(experiment,"_LOKI_Discarded.tsv"))
-  message("LOKI stored the fate of the discarded MOTUs in file: ",paste0(experiment,"_LOKI_Discarded.tsv"))
+  message("LOKI discarded ",num_discarded," MOTUs, which He stored in file: ",paste0(experiment,"_LOKI_Discarded.tsv"))
+  message("LOKI stored the fate of the discarded MOTUs in file: ",paste0(experiment,"_LOKI_mumu.log"))
 }

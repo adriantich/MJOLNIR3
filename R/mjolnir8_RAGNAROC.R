@@ -176,20 +176,22 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
   # Remove bacteria
   if (remove_bacteria) {
     message("RAGNAROC is removing bacterial MOTUs now.")
-    bacteria_removed <- sum(c(db$superkingdom_name == "Prokaryota" | db$SCIENTIFIC_NAME == "root"),na.rm = T)
-    db <- db[(!grepl('Prokaryota',db$superkingdom_name) & !grepl('Prokaryota',db$superkingdom_name)),]
+    # bacteria_removed <- sum(c(db$superkingdom_name == "Prokaryota" | db$SCIENTIFIC_NAME == "root"),na.rm = T)
+    # db <- db[(!grepl('Prokaryota',db$superkingdom_name) & !grepl('Prokaryota',db$superkingdom_name)),]
+    bacteria_removed <- sum(c(db$domain == "Bacteria" | db$ltg_name == ""),na.rm = T)
+    db <- db[(!(grepl('Bacteria',db$domain) | db$ltg_name != "")),]
   }
 
   # Remove contamination
   if (remove_contamination){
     message("RAGNAROC is removing contaminant MOTUs now.")
     contamination <- readLines(contamination_file)
-    db <- db[!((db$SCIENTIFIC_NAME %in% contamination) |
-                         (db$phylum_name %in% contamination) |
-                         (db$class_name %in% contamination) |
-                         (db$order_name %in% contamination) |
-                         (db$family_name %in% contamination) |
-                         (db$genus_name %in% contamination)) ,]
+    db <- db[!((db$ltg_name %in% contamination) |
+                         (db$phylum %in% contamination) |
+                         (db$class %in% contamination) |
+                         (db$order %in% contamination) |
+                         (db$family %in% contamination) |
+                         (db$genus %in% contamination)) ,]
   }
 
   # Load the metadata_table
@@ -260,7 +262,8 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
       # numts_seqs <- c()
   
       number_of_motus <- length(unique(ESV_data_initial$MOTU))
-      motu_taxa <- data.frame("id" = db$id, "Metazoa" = c(db$kingdom_name == "Metazoa" & !is.na(db$kingdom_name)))
+      # motu_taxa <- data.frame("id" = db$id, "Metazoa" = c(db$kingdom_name == "Metazoa" & !is.na(db$kingdom_name)))
+      motu_taxa <- data.frame("id" = db$id, "Metazoa" = c(db$kingdom == "Metazoa" & !is.na(db$kingdom)))
       numts_ESV <- parallel::mclapply(1:number_of_motus,function(i,ESV_data_initial,motu_taxa){
         motu <- unique(ESV_data_initial$MOTU)[i]
         datas <- ESV_data_initial[ESV_data_initial$MOTU==motu,]
@@ -291,7 +294,7 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
   if (ESV_within_MOTU){
     write.table(ESV_data_initial,output_file_ESV,row.names = F,sep="\t",quote = F)
   }
-  message("After RAGNAROC, MJOLNIR is done. File: ",output_file, " written with ",nrow(db), " MOTUs and ",sum(db$total_reads)," total reads.")
+  message("After RAGNAROC, MJOLNIR is done. File: ",output_file, " written with ",nrow(db), " MOTUs and ",sum(db$COUNT)," total reads.")
   
   #####
   # RAGNAROC REPORT
