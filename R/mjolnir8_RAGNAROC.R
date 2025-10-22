@@ -115,8 +115,14 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
                               contamination_file = "contaminants.txt",
                               ESV_within_MOTU = T,
                               remove_numts = F, cores = 1, ...){
+  # metadata_table = "";
+  # output_file = ""; output_file_ESV = "";
+  # min_reads = 0; remove_bacteria = T;
+  # remove_contamination = F;
+  # contamination_file = "contaminants.txt";
+  # ESV_within_MOTU = T;
+  # remove_numts = F; cores = 1;
 
-  
   if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
     experiment <- lib
@@ -179,7 +185,7 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
     # bacteria_removed <- sum(c(db$superkingdom_name == "Prokaryota" | db$SCIENTIFIC_NAME == "root"),na.rm = T)
     # db <- db[(!grepl('Prokaryota',db$superkingdom_name) & !grepl('Prokaryota',db$superkingdom_name)),]
     bacteria_removed <- sum(c(db$domain == "Bacteria" | db$ltg_name == ""),na.rm = T)
-    db <- db[(!(grepl('Bacteria',db$domain) | db$ltg_name != "")),]
+    db <- db[(!(grepl('Bacteria',db$domain) | db$ltg_name == "")),]
   }
 
   # Remove contamination
