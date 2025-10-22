@@ -114,9 +114,18 @@ Right now MJOLNIR3 is experiencing new updates. This year 2024 is planned that a
         conda install -c bioconda swarm
         # installation of DnoisE
         conda install bioconda::dnoise
-        # installation of lulu
-        git clone https://github.com/tobiasgf/lulu.git
-        Rscript -e 'install.packages("lulu",repos=NULL)'
+        # # installation of lulu
+        # git clone https://github.com/tobiasgf/lulu.git
+        # Rscript -e 'install.packages("lulu",repos=NULL)'
+
+        # changed to mumu
+        git clone https://github.com/frederic-mahe/mumu.git
+        cd ./mumu/
+        make
+        make check
+        make install prefix=$CONDA_PREFIX
+        cd ..
+
         # installation of Biostrings
         Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
         Rscript -e 'BiocManager::install("Biostrings")'
