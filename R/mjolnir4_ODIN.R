@@ -183,10 +183,6 @@
 #' the option of not running the DnoisE if it has been already run for a previous
 #' experiment. The denoised and filtered fasta files are needed.
 #'
-#' @param remove_DMS Logical. If TRUE, it will delete all obidms objects that are
-#' created during the process. This can save a lot of hard disk space. The FALSE
-#' option is useful for developing and debugging.
-#'
 #' @export 
 #' 
 #' @examples
@@ -233,7 +229,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
                           alpha = 4,
                           entropy = c(0.47, 0.23, 1.02, 313),
                           algorithm = "DnoisE_SWARM", run_dnoise = TRUE,
-                          remove_singletons = NULL, remove_DMS = TRUE, ...) {
+                          remove_singletons = NULL, ...) {
   
   
   #####
@@ -528,7 +524,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
     #####
     # 7: D -> create fasta files for taxonomic assignment
     #####
-    if(algorithm == "dnoise"){
+    if(algorithm == "dnoise") {
       seqs_abund <- seqs_abund[, c("ID", "NUC_SEQ")]
       seqs_abund <- paste(paste0(">", seqs_abund$ID), seqs_abund$NUC_SEQ, sep = "\n")
       writeLines(paste0(seqs_abund, collapse = "\n"), paste0(outfile, ".fasta"))
@@ -721,9 +717,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   
   save(file = "summary_ODIN.RData",list = c(c("alpha","min_reads_MOTU","min_reads_ESV","algorithm","run_entropy","entropy","after_2_ODIN"),
                                             c("before_1_ODIN")[exists("before_1_ODIN")],c("after_4a_ODIN")[exists("after_4a_ODIN")]))
-  if (remove_DMS) {
-    system(paste0("rm -r *ODIN.obidms "), intern = TRUE, wait = TRUE)
-  }
+
   message("ODIN is done.")
 }
 

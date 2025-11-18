@@ -1,4 +1,4 @@
-#' Demultiplex and trim primers from raw FASTQ files
+#' RAN: Demultiplex and trim primers from raw FASTQ files
 #'
 #' This function will prepare the FASTQ raw data for each sample with the sample
 #' tags and primers removed.
@@ -156,11 +156,11 @@
 #' # Enter number of cores to be used in parallel.
 #' cores <- 7
 #'
-#' demultiplex(R1_filenames, lib_prefix = lib_prefix, experiment = experiment,
+#' mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefix, experiment = experiment,
 #'              cores = cores, R1_motif = "_R1", R2_motif = "_R2",
 #'              tag_error = 0, primer_error = 0.1)
 
-demultiplex <- function(R1_filenames = "",
+mjolnir1_RAN <- function(R1_filenames = "",
                          lib_prefix = "",
                          experiment = NULL,
                          primer_F = "GGWACWRGWTGRACWNTNTAYCCYCC",
@@ -174,7 +174,7 @@ demultiplex <- function(R1_filenames = "",
                          primer_error = 0.1,
                          original_samples = "original_samples",
                          mjolnir_agnomens = "mjolnir_agnomens",
-                         commands_file = "commands_runned.txt",
+                         commands_file = "commands_runned_RAN.txt",
                          only_commands = FALSE,
                          ...) {
   # Rationale:

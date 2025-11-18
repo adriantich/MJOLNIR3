@@ -4,7 +4,13 @@
 \alias{mjolnir3_HELA}
 \title{HELA: Hierarchical Elimination of Lurking Artifacts}
 \usage{
-mjolnir3_HELA(experiment = NULL, cores = 1, ...)
+mjolnir3_HELA(
+  experiment = NULL,
+  cores = 1,
+  commands_file = "commands_runned_HELA.txt",
+  only_commands = FALSE,
+  ...
+)
 }
 \arguments{
 \item{experiment}{Character string. Acronym for the experiment. This
@@ -12,6 +18,12 @@ acronym must be of 4 characters in capital letters. Do not mix up library and
 experiment acronyms. However they can be the same.}
 
 \item{cores}{Numeric. Number of threads for parallel processing.}
+
+\item{commands_file}{Character string. Name of the file where all commands
+will be written. If NULL or missing, commands will not be recorded.}
+
+\item{only_commands}{Logical. If TRUE, only the commands will be written to
+the commands_file. If FALSE, the commands will be executed.}
 }
 \description{
 This function uses the uchime_denovo algorithm implemented in VSEARCH to

@@ -19,7 +19,7 @@ mjolnir1_RAN(
   primer_error = 0.1,
   original_samples = "original_samples",
   mjolnir_agnomens = "mjolnir_agnomens",
-  commands_file = "commands_runned.txt",
+  commands_file = "commands_runned_RAN.txt",
   only_commands = FALSE,
   ...
 )

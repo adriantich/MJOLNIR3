@@ -15,6 +15,12 @@
 #' experiment acronyms. However they can be the same.
 #'
 #' @param cores Numeric. Number of threads for parallel processing.
+#' 
+#' @param commands_file Character string. Name of the file where all commands
+#' will be written. If NULL or missing, commands will not be recorded.
+#' 
+#' @param only_commands Logical. If TRUE, only the commands will be written to
+#' the commands_file. If FALSE, the commands will be executed.
 #'
 #' @export 
 #' 
@@ -45,7 +51,9 @@
 #' mjolnir3_HELA(experiment = experiment, cores = cores)
 
 
-mjolnir3_HELA <- function(experiment = NULL, cores = 1, ...){
+mjolnir3_HELA <- function(experiment = NULL, cores = 1, 
+                          commands_file = "commands_runned_HELA.txt", 
+                          only_commands = FALSE, ...){
 
   suppressPackageStartupMessages(library(parallel))
   if (exists("lib") && is.null(experiment)) {
@@ -59,6 +67,24 @@ mjolnir3_HELA <- function(experiment = NULL, cores = 1, ...){
                                                   # "_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_FREYJA_uniq.fasta$")))
                                                   "_.*_FREYJA_uniq.fasta$")))
 
+
+  # run all commands
+  if (!is.logical(only_commands)){
+    stop("Error: only_commands must be TRUE or FALSE")
+  }
+  if (commands_file !=  "" | !is.null(commands_file) | 
+      !missing(commands_file)) {
+    record_commands <- TRUE
+    commands_file <- commands_file
+  } else if (only_commands) {
+    record_commands <- TRUE
+    commands_file <- "commands_runned_RAN.txt"
+    message(paste0("commands_file was not specified, so commands will be written to ",
+                   commands_file))
+  } else {
+    record_commands <- FALSE
+  }
+
   message("HELA will remove chimaeras from each sample")
   X <- NULL
   for (i in sample_list) {
@@ -66,6 +92,14 @@ mjolnir3_HELA <- function(experiment = NULL, cores = 1, ...){
                      "--sizeout --minh 0.90 ",
                      "--nonchimeras ", i, "_HELA.fasta "))
   }
+  if (record_commands) {
+    writeLines(X, commands_file)
+  }
+  if (only_commands) {
+    message("Only commands were recorded. Exiting HELA function.")
+    return(invisible(NULL))
+  }
+
   mclapply(X, function(x) system(x, intern = TRUE, wait = TRUE),
            mc.cores = cores)
 

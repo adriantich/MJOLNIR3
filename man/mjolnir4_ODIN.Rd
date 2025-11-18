@@ -20,7 +20,6 @@ mjolnir4_ODIN(
   algorithm = "DnoisE_SWARM",
   run_dnoise = TRUE,
   remove_singletons = NULL,
-  remove_DMS = TRUE,
   ...
 )
 
@@ -40,7 +39,6 @@ mjolnir4_ODIN(
   algorithm = "DnoisE_SWARM",
   run_dnoise = TRUE,
   remove_singletons = NULL,
-  remove_DMS = TRUE,
   ...
 )
 }
