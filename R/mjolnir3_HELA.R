@@ -56,7 +56,8 @@ mjolnir3_HELA <- function(experiment = NULL, cores = 1, ...){
   }
   sample_list <- gsub("_FREYJA_uniq.fasta", "",
                       list.files(pattern = paste0("^", experiment,
-                                                  "_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_FREYJA_uniq.fasta$")))
+                                                  # "_[a-zA-Z0-9]{4}_sample_[a-zA-Z0-9]{3}_FREYJA_uniq.fasta$")))
+                                                  "_.*_FREYJA_uniq.fasta$")))
 
   message("HELA will remove chimaeras from each sample")
   X <- NULL

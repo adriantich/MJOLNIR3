@@ -18,8 +18,17 @@
 #'
 #' @param Lmax Numeric. Maximum bp length for a sequence to be accepted.
 #'
-#' @param score_obilign Numeric. Minimum quality threshold to retain a sequence
-#' in the qualiy filtering after pairalignment.
+#' @param min_overlap Numeric. Minimum overlap length between R1 and R2 reads.
+#' 
+#' @param maxdiff Numeric. Maximum number of differences allowed in the overlap.
+#' If less than 1, it will be considered as a percentage of the overlap length.
+#' 
+#' @param error_rate Numeric. Maximum expected error rate allowed for the output
+#' merged reads. For a given sequence, the expected error is the sum of error
+#' probabilities for all the positions in the sequence. 
+#' Since error probabilities can be small but not null, the expected error is
+#' always greater than zero, and at most equal to the length of the sequence
+#' when all positions in the sequence have an error probability of 1.0.
 #'
 #' @param R1_motif Character string that distinguish the forward line file from
 #' the reverse.
@@ -27,16 +36,12 @@
 #' @param R2_motif Character string that distinguish the reverse line file from
 #' the forward.
 #'
-#' @param remove_DMS Logical. If TRUE, it will delete all obidms objects that are
-#' created during the process. This can save a lot of hard disk space. The FALSE
-#' option is useful for developing and debugging.
-#'
-#' @param run_on_tmp Logical. If TRUE, the obidms objects will be created in
-#' the /tmp location. This increases the speed as the communication within the
-#' processor and the object that is being edited all the time is faster. However,
-#' this method will consume much of the /tmp memory and it is recommended to have
-#' three to four times the memory available in the /tmp directory than the original
-#' forward files and remove_DMS=T
+#' @param commands_file Character string. Name of the file where all commands
+#' will be written. If NULL or missing, commands will not be recorded.
+#' 
+#' @param only_commands Logical. If TRUE, only the commands will be written to
+#' the commands_file. If FALSE, the commands will be executed.
+#' 
 #'
 #' @export 
 #' 
@@ -64,9 +69,13 @@
 #' mjolnir2_FREYJA(experiment = experiment, cores = cores, Lmin=299, Lmax=320)
 
 mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320,
-                            score_obialign = 40,
-                            R1_motif = "_R1", R2_motif = "_R2", remove_DMS = T, 
-                            run_on_tmp = F, ...) {
+                            min_overlap = 40,
+                            maxdiff = 0,
+                            error_rate = 0.05,
+                            R1_motif = "_R1", R2_motif = "_R2",
+                            commands_file = "commands_runned_FREYJA.txt",
+                            only_commands = FALSE,
+                            ...) {
   
   if (exists("lib") && is.null(experiment)) {
     # Use lib as experiment
@@ -84,16 +93,27 @@ mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320
     stop()
   }
 
-  if (run_on_tmp) {
-    tmp <- "/tmp/"
+  # run all commands
+  if (!is.logical(only_commands)){
+    stop("Error: only_commands must be TRUE or FALSE")
+  }
+  if (commands_file !=  "" | !is.null(commands_file) | 
+      !missing(commands_file)) {
+    record_commands <- TRUE
+    commands_file <- commands_file
+  } else if (only_commands) {
+    record_commands <- TRUE
+    commands_file <- "commands_runned_FREYJA.txt"
+    message(paste0("commands_file was not specified, so commands will be written to ",
+                   commands_file))
   } else {
-    tmp <- ""
+    record_commands <- FALSE
   }
 
   filtering_commands <- NULL
   message("FREYJA will first clear the battle field.")
   message("Any directory or file containing the word FREYJA will be removed.")
-  system("rm -r *FREYJA*", intern = TRUE, wait = TRUE)
+  # system("rm -r *FREYJA*", intern = TRUE, wait = TRUE)
 
   metadata <- read.table(paste0(experiment, "_metadata.tsv"),
                          sep = "\t", header = TRUE)
@@ -118,56 +138,67 @@ mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320
   fastqR1_list <- fastqR1_list[to_retain$num_seqs > 0]
   fastqR2_list <- fastqR2_list[to_retain$num_seqs > 0]
   agnomens <- agnomens[to_retain$num_seqs > 0]
-  # Create obitool commands
+  if (maxdiff < 1) {
+    maxdiffs_param <- " --fastq_maxdiffpct "
+  } else {
+    maxdiffs_param <- " --fastq_maxdiffs "
+  }
+  if (!exists("additional_params_alignment")) {
+    additional_params_alignment <- ""
+  }
   for (i in seq_along(agnomens)) {
     print(fastqR1_list[i])
-    filtering_commands <- c(filtering_commands,paste0(
-      "obi import --fastq-input ",fastqR2_list[i], " ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads2 ; ",
-      "obi import --fastq-input ",fastqR1_list[i], " ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads1 ; ",
-      "obi alignpairedend -R ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads2 ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads1 ", tmp, experiment,"_",agnomens[i],"_FREYJA/aligned_seqs ; ",
-      ifelse(remove_DMS,paste0("obi rm ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads1 ; obi rm ", tmp, experiment,"_",agnomens[i],"_FREYJA/reads2 ; "),""),
-      "obi grep -p \"sequence[\'score\'] > ",score_obialign,"\" ", tmp, experiment,"_",agnomens[i],"_FREYJA/aligned_seqs ", tmp, experiment,"_",agnomens[i],"_FREYJA/good_seqs ; ",
-      ifelse(remove_DMS,paste0("obi rm ", tmp, experiment,"_",agnomens[i],"_FREYJA/aligned_seqs ; "),""),
-      "obi grep -p \"len(sequence)>",Lmin," and len(sequence)<",Lmax,"\" -S \"^[ACGT]+$\" ", tmp, experiment,"_",agnomens[i],"_FREYJA/good_seqs ", tmp, experiment,"_",agnomens[i],"_FREYJA/filtered_seqs ; "))
+    filtering_commands <-
+      c(filtering_commands,
+        paste0(
+          "vsearch ",
+          " --fastq_mergepairs ", fastqR1_list[i],
+          " --reverse ", fastqR2_list[i],
+          " --fastqout ", experiment, "_", agnomens[i], "_FREYJA_aligned.fastq",
+          " --fastq_minovlen ", min_overlap,
+          maxdiffs_param, maxdiff,
+          " --fastq_maxee ", error_rate,
+          " --fastq_minmergelen ", Lmin,
+          " --fastq_maxmergelen ", Lmax,
+          " --fastq_maxns 0 ",
+          " ", additional_params_alignment, " ",
+          " ; ",
+          " vsearch ",
+          " --fastx_uniques ", experiment, "_", agnomens[i], "_FREYJA_aligned.fastq",
+          " --sizeout ",
+          " --fastaout ", experiment, "_", agnomens[i], "_FREYJA_uniq.fasta"
+        )
+      )
   }
-
-  # run all commands
+  if (only_commands) {
+    writeLines(filtering_commands, con = commands_file)
+    message(paste0("Only commands were written to ", commands_file))
+    return(invisible(NULL))
+  } else {
+    if (record_commands) {
+      writeLines(filtering_commands, con = commands_file)
+      message(paste0("Commands were written to ", commands_file))
+    }
+  }
   mclapply(filtering_commands, function(x) system(x,intern=T,wait=T), mc.cores = cores)
 
   # obi uniq vas performed in HELA in previous versions but now is computed here
   files <- list.dirs(recursive = F)
-  files <- files[grepl("sample",files)&grepl("FREYJA.obidms",files)]
-  files <- gsub("./","",gsub(".obidms","",files))
-  X <- NULL
-
-  for (file in files) {
-    X <- c(X,paste0("obi uniq ", tmp, file,"/filtered_seqs ",file,"/uniq ; ",
-                    "obi export --fasta-output --only-keys \"COUNT\" ", tmp, file,"/uniq > ",file,"_uniq.fasta ; ",
-                    "sed -i 's/COUNT/size/g' ",file,"_uniq.fasta ; ",
-                    "sed -i 's/;//g' ",file,"_uniq.fasta ; ",
-                    "sed -E -i 's/(size=[0-9]*).*/\\1;/g' ",file,"_uniq.fasta ; ",
-                    "sed -i 's/ /;/g' ",file,"_uniq.fasta "))
-  }
-
-  mclapply(X, function(x) system(x,
-                                 intern = TRUE, wait = TRUE),
-           mc.cores = cores)
+  files <- files[grepl("sample",files)&grepl("FREYJA_aligned.fastq",files)]
+  files <- gsub("./","",gsub("_aligned.fastq","",files))
 
   after_FREYJA <- mclapply(files,function(file){
-    output <- system(paste0("obi ls ", tmp, file, " | grep 'filtered_seqs\\|uniq'"),
+    file <- "ULOY_ULO1_sample_001_FREYJA"
+    output <- system(paste0("wc -l ", file, "_aligned.fastq"),
                      intern = TRUE, wait = TRUE)
-    values <- as.numeric(gsub(".*count: ", "", output))
-    if (remove_DMS) {
-      system(paste0("rm -r ",tmp, file,".obidms "),
-             intern = TRUE, wait = TRUE)
-    } else if (run_on_tmp) {
-      system(paste0("mv ",tmp, file,".obidms ."),
-             intern = TRUE, wait = TRUE)
-    }
+    sequences <- as.numeric(gsub(paste0(" ",file,"_aligned.fastq"), "", output)) / 4
+    output <- system(paste0("grep '>' ", file, "_uniq.fasta | wc -l"),
+                     intern = TRUE, wait = TRUE)
+    uniq_seqs <- as.numeric(output)
 
     return(data.frame(file=file,
                       version=c("filtered sequences","uniq sequences"),
-                      num_seqs=values))
+                      num_seqs=c(sequences, uniq_seqs)))
   },mc.cores = cores)
 
   variables_FREYJA <- data.frame(variable = c("cores", "Lmin",
