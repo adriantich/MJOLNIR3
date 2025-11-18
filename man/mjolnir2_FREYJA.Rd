@@ -9,11 +9,13 @@ mjolnir2_FREYJA(
   cores = 1,
   Lmin = 299,
   Lmax = 320,
-  score_obialign = 40,
+  min_overlap = 40,
+  maxdiff = 0,
+  error_rate = 0.05,
   R1_motif = "_R1",
   R2_motif = "_R2",
-  remove_DMS = T,
-  run_on_tmp = F,
+  commands_file = "commands_runned_FREYJA.txt",
+  only_commands = FALSE,
   ...
 )
 }
@@ -28,25 +30,29 @@ experiment acronyms. However they can be the same.}
 
 \item{Lmax}{Numeric. Maximum bp length for a sequence to be accepted.}
 
+\item{min_overlap}{Numeric. Minimum overlap length between R1 and R2 reads.}
+
+\item{maxdiff}{Numeric. Maximum number of differences allowed in the overlap.
+If less than 1, it will be considered as a percentage of the overlap length.}
+
+\item{error_rate}{Numeric. Maximum expected error rate allowed for the output
+merged reads. For a given sequence, the expected error is the sum of error
+probabilities for all the positions in the sequence. 
+Since error probabilities can be small but not null, the expected error is
+always greater than zero, and at most equal to the length of the sequence
+when all positions in the sequence have an error probability of 1.0.}
+
 \item{R1_motif}{Character string that distinguish the forward line file from
 the reverse.}
 
 \item{R2_motif}{Character string that distinguish the reverse line file from
 the forward.}
 
-\item{remove_DMS}{Logical. If TRUE, it will delete all obidms objects that are
-created during the process. This can save a lot of hard disk space. The FALSE
-option is useful for developing and debugging.}
+\item{commands_file}{Character string. Name of the file where all commands
+will be written. If NULL or missing, commands will not be recorded.}
 
-\item{run_on_tmp}{Logical. If TRUE, the obidms objects will be created in
-the /tmp location. This increases the speed as the communication within the
-processor and the object that is being edited all the time is faster. However,
-this method will consume much of the /tmp memory and it is recommended to have
-three to four times the memory available in the /tmp directory than the original
-forward files and remove_DMS=T}
-
-\item{score_obilign}{Numeric. Minimum quality threshold to retain a sequence
-in the qualiy filtering after pairalignment.}
+\item{only_commands}{Logical. If TRUE, only the commands will be written to
+the commands_file. If FALSE, the commands will be executed.}
 }
 \description{
 FREYJA will use OBITools3 commands to merge paired-end reads, trim primer

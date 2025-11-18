@@ -2,7 +2,7 @@
 % Please edit documentation in R/mjolnir1_RAN.R
 \name{mjolnir1_RAN}
 \alias{mjolnir1_RAN}
-\title{RAN: Reads Allotment in N samples}
+\title{RAN: Demultiplex and trim primers from raw FASTQ files}
 \usage{
 mjolnir1_RAN(
   R1_filenames = "",
@@ -13,9 +13,14 @@ mjolnir1_RAN(
   cores = 1,
   R1_motif = "_R1",
   R2_motif = "_R2",
+  metadata = "",
   multilane = FALSE,
   tag_error = 0,
   primer_error = 0.1,
+  original_samples = "original_samples",
+  mjolnir_agnomens = "mjolnir_agnomens",
+  commands_file = "commands_runned.txt",
+  only_commands = FALSE,
   ...
 )
 }
@@ -38,34 +43,61 @@ samples are already demultiplexed.}
 \item{primer_R}{Character string of the Reverse primer. Necessary when
 samples are already demultiplexed.}
 
-\item{cores}{Numeric. Number of parts into which the input files will be split
-for the parallel processing of the FREYJA function.}
+\item{cores}{Numeric. Number threads to run cutadapt.}
 
-\item{R1_motif}{Character string that distinguishes the forward line file from
+\item{R1_motif}{Character string that distinguishes
+the forward line file from
 the reverse.}
 
-\item{R2_motif}{Character string that distinguishes the reverse line file from
+\item{R2_motif}{Character string that distinguishes
+the reverse line file from
 the forward.}
 
-\item{multilane}{Logical. If FALSE, the function will consider that the each library
-has only one sequencing lane. If TRUE, only one library is processed at a time.}
+\item{multilane}{Logical. If FALSE, the function will
+consider that the each library
+has only one sequencing lane. If TRUE,
+only one library is processed at a time.}
 
 \item{tag_error}{Numeric. From 0 (no errors allowed) to 1. will determine the
 proportion of nucleotides that can be different in the sample tags.}
 
-\item{primer_error}{Numeric. From 0 (no errors allowed) to 1. will determine the
+\item{primer_error}{Numeric. From 0 (no errors allowed) to 1.
+will determine the
 proportion of nucleotides that can be different in the primers.}
+
+\item{original_samples}{Character string. Name of the column in the metadata
+table that contains the original sample names.}
+
+\item{mjolnir_agnomens}{Character string. Name of the column in the metadata
+table that contains the mjolnir agnomen names.}
+
+\item{commands_file}{Character string. Name of the file where all commands
+will be written. If NULL or missing, commands will not be recorded.}
+
+\item{only_commands}{Logical. If TRUE, only the commands will be written to
+the commands_file. If FALSE, the commands will be executed.}
+
+\item{metadata_table}{tsv table. if not specified, the file must be named
+<EXPX>_metadata.tsv. This table must have: a column named "mjolnir_agnomens"
+with the names given to the samples during the pipeline in FREYJA; a column
+named "original_samples" with the samples names that will be given to the
+samples at the end of the pipeline; and a column with the name specified in
+in the "blank_col" parameter ("BLANK" by default) where blanks, negatives and
+controls are tagged with a flag specified in the "blank_tag" parameter (T by
+default).}
 }
 \description{
-RAN function will prepare the FASTQ raw data for each sample with the sample
-tags and primers removed. The R1 output files will contain all forward sequences and
+This function will prepare the FASTQ raw data for each sample with the sample
+tags and primers removed.
+The R1 output files will contain all forward sequences and
 R2 the reverse sequences. Please, read the Details section before running.
 }
 \details{
-RAN considers the following scenarios:
+This function considers the following scenarios:
 
-- \bold{Scenario 1}. The samples are multiplexed in a library/libraries 
-   (it is possible to run multiple libraries at once from a single experiment).
+- \bold{Scenario 1}. The samples are multiplexed in a library/libraries
+   (it is possible to run multiple libraries
+   at once from a single experiment).
    Each library has only two raw .fastq(.gz), R1 and R2.
    For each library there must be only one ngsfile (see below)
    and for the whole experiment only one metadata file (see below).
@@ -73,15 +105,18 @@ RAN considers the following scenarios:
    must be unique, it must not be the same in different ngsfiles.
    \emph{lib_prefix} and \emph{R1_filenames} must be the same length.
 
-- \bold{Scenario 2}. The samples are multiplexed but for each library we have more
+- \bold{Scenario 2}. The samples are multiplexed but for
+   each library we have more
    than two raw data files. For example, when your library has been
-   sequenced across multiple lanes on a Novaseq. In this case, RAN has
+   sequenced across multiple lanes on a Novaseq. In this case, this function has
    to be run separately for each library and the option
-   \emph{multilane} must be set to TRUE. In this case, \emph{lib_prefix} can only be
-   of length one (only one library), but the \emph{R1_filenames} can be longer.
+   \emph{multilane} must be set to TRUE.
+   In this case, \emph{lib_prefix} can only be
+   of length one (only one library),
+   but the \emph{R1_filenames} can be longer.
 
 - \bold{Scenario 3}. The samples are demultiplexed but the primer remains.
-   In this case RAN will trimm the primers and separate the sequences
+   In this case this function will trim the primers and separate the sequences
    into fwd and rev files.
 
 
@@ -91,7 +126,8 @@ Files required:
 
 - \emph{ngsfilter file}. Needed only for multiplexed libraries
      For each library, a ngsfilter file is needed and must be named
-     \bold{ngsfilter_<library identifier>.tsv}. This must contain five tab-separated
+     \bold{ngsfilter_<library identifier>.tsv}.
+     This must contain five tab-separated
      columns and no header. The first column with the library identifier
      (four charachter identifier), the second with the mjolnir_agnomens,
      the third with the sample tags, the
@@ -104,7 +140,7 @@ Files required:
      \bold{<experiment identifier>_metadata.tsv}.
 
 Important: when the same library has different sequencing lanes (NovaSeq),
-RAN has to be run separately for each library and the option
+this function has to be run separately for each library and the option
 \emph{multilane} must be set to TRUE.
 
 
@@ -116,13 +152,14 @@ for COI will be used by default.
 
 Files required:
 
-- \emph{metadata file}. RAN will read the
+- \emph{metadata file}. This function will read the
      names of each individual R1 fastq files (full name including extension)
      from a column in the \bold{<experiment identifier>_metadata.tsv}
-     file, called "fastq_name_R1". In the metadata table, each sample in the
-     "original_samples" column must have a their corresponding fastq_name_R1 and
+     file, called "fastq_name_R1".
+     In the metadata table, each sample in the "original_samples"
+     column must have a their corresponding fastq_name_R1 and
      "mjolnir_agnomen" (LIBX_sample_XXX, i.e LIBA_sample_001).
-     If the "fastq_name_R1" column is not in the metadata, RAN will use the
+     If the "fastq_name_R1" column is not in the metadata, This function will use the
      \emph{lib_prefix}.
 }
 \examples{
@@ -132,16 +169,17 @@ library(mjolnir)
 R1_filenames <- c("ULO1_R1.fastq.gz", "ULO2_R1.fastq.gz", "ULO3_R1.fastq.gz",
                   "ULO4_R1.fastq.gz")
 
-# Input identifiers for the individual libraries to be used. 
-# It should be a 4-character name, matching the information in the 
+# Input identifiers for the individual libraries to be used.
+# It should be a 4-character name, matching the information in the
 # ngsfilter files.
-lib_prefixes <- c("ULO1", "ULO2", "ULO3", "ULO4")
+lib_prefix <- c("ULO1", "ULO2", "ULO3", "ULO4")
 
 # experiment identifier
 experiment <- 'ULOY'
 # Enter number of cores to be used in parallel.
 cores <- 7
 
-mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefixes, experiment = experiment,
-             cores = cores, R1_motif = "_R1", R2_motif = "_R2", tag_error = 0, primer_error = 0.1)
+mjolnir1_RAN(R1_filenames, lib_prefix = lib_prefix, experiment = experiment,
+             cores = cores, R1_motif = "_R1", R2_motif = "_R2",
+             tag_error = 0, primer_error = 0.1)
 }

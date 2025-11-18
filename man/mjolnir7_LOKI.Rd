@@ -4,7 +4,7 @@
 \alias{mjolnir7_LOKI}
 \title{LOKI: LULU Overseeing with Kinship Identification}
 \usage{
-mjolnir7_LOKI(experiment = NULL, min_id = 0.84, ...)
+mjolnir7_LOKI(experiment = NULL, min_id = 0.84, discard = TRUE, ...)
 }
 \arguments{
 \item{experiment}{Character string. Acronym for the experiment. This
