@@ -323,8 +323,6 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   }
   
   message("ODIN will first clear the battle field.")
-  message("All obidms objects called *ODIN.obidms will be removed.")
-  system("rm -r *ODIN.obidms", intern = TRUE, wait = TRUE)
   
   if (!(algorithm=="dnoise_swarm" || algorithm=="dnoise" || algorithm=="swarm_dnoise" || algorithm=="swarm")) {
     message("ERROR: algorithm has to be one of the following:\nDnoisE_SWARM\nSWARM_DnoisE\nSWARM\nDnoisE")
@@ -402,19 +400,12 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   # cat all samples into one fasta
   cat_samples(sample_list, experiment)
   
-  # # import fasta files into obidms and annotate with sample name
-  # samples_2_obidms(sample_list, sample_files, cores)
-  
-  # # cat all samples into one obidms
-  # cat_samples_obidms(sample_list, experiment)
-  
   #####
   # 3: D,DS,SD,S,SaD -> dereplicate
   #####
   
   # dereplicate
   dereplicate_vsearch(experiment)
-  # dereplicate_obidms(experiment)
   
   #####
   # 4: D,DS,SD,S,SaD -> annotate new names
@@ -422,8 +413,6 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   
   # rename sequences
   rename_sequences(experiment)
-  # # annotate
-  # annotate_obidms(experiment)
   
   # export to csv
   if (algorithm == "dnoise"){
@@ -433,27 +422,6 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   }
   table_creation(experiment, filetab)
 
-  # # checkpoint
-  # output <- system(paste0("obi ls ", experiment, "_ODIN | grep 'Line count'"), intern = T, wait = T)
-  # values <- as.numeric(gsub(".*count: ", "", output))
-  # version <- gsub(".*# ", "", gsub(": Date.*", "", output))
-  # after_2_ODIN <- data.frame(algorithm = algorithm,
-  #                            version = version,
-  #                            num_seqs = values)
-  
-  
-  # # export to csv and read to apply filters
-  # if (algorithm == "dnoise"){
-  #   filetab <- paste0(experiment, "_ODIN_ESV.csv")
-  # } else{
-  #   filetab <- paste0(experiment, "_ODIN_seqs.csv")
-  # }
-  
-  # system(paste0("obi export --tab-output --sep ','  -o ",
-  #               filetab, " ",
-  #               experiment, "_ODIN/seq_id"),
-  #        intern = T, wait = T)
-  # seqs_abund <- read.csv(filetab, sep = ",", head = TRUE)
   seqs_abund <- read.csv(filetab, sep = "\t", head = TRUE)
   names(seqs_abund) <- gsub("MERGED_sample.", "", names(seqs_abund))
   if(metadata_table == '') {
@@ -547,12 +515,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   if (algorithm == "swarm_dnoise" || algorithm == "swarm" ||
       algorithm == "dnoise_swarm") { 
     message("ODIN will cluster sequences into MOTUs with SWARM.")
-    # system(paste0("obi export --fasta-output --only-keys \"COUNT\" ",
-    #               experiment, "_ODIN/seq_id > ",outfile,".fasta ; ",
-    #               "sed -i 's/COUNT/size/g' ",outfile,".fasta ; ",
-    #               "sed -i 's/;//g' ",outfile,".fasta ; ",
-    #               "sed -E -i 's/(size=[0-9]*).*/\\1;/g' ", outfile, ".fasta ; ",
-    #               "sed -i 's/ /;/g' ",outfile, ".fasta "))
+    
     system(paste0(swarm, " -d ", d, " -z -t ", cores,
                   " -o ", outfile, "_SWARM_output ",
                   " -s ", outfile, "_SWARM", d, "nc_stats ",
@@ -849,66 +812,6 @@ dnoise_fasta_2 <- function(entropy, cores, sample_list, alpha, min_reads_ESV, dn
   }
 }
 
-samples_2_obidms <- function(sample_list, sample_files, cores) {
-  X <- NULL
-  for (file in sample_list) {
-    input_file <- sample_files[grep(file, sample_files)]
-    X <- c(X,
-           paste0("tempfile=$(mktemp); ",
-                  "sed 's/;size/; COUNT/g' ",input_file, " > $tempfile ; ",
-                  "obi import --fasta-input $tempfile ", file,"_ODIN/sample ; ",
-                  "obi annotate -S sample:\"", gsub("^[a-zA-Z0-9]{4}_", "", file), "\" ", 
-                  file,"_ODIN/sample  ", file,"_ODIN/sample_name ;
-                  rm $tempfile"))
-    
-  }
-  mclapply(X, function(x) system(x,intern = TRUE, wait = TRUE), mc.cores = cores)
-}
-
-cat_samples_obidms <- function(sample_list, experiment) {
-  for (i in seq_along(sample_list)) {
-    file <- sample_list[i]
-    if (i == 1) {
-      system(paste0("obi cat -c ",
-                    file,"_ODIN/sample_name",
-                    " ", experiment,"_ODIN/version",i),
-             intern = TRUE, wait = TRUE)
-    } else if (i==length(sample_list)) {
-      system(paste0("obi cat -c ",
-                    file, "_ODIN/sample_name",
-                    " -c ", experiment, "_ODIN/version", c(i - 1),
-                    " ", experiment, "_ODIN/samples ; ",
-                    "obi rm ", experiment, "_ODIN/version", c(i - 1)),
-             intern = TRUE, wait = TRUE)
-    } else {
-      system(paste0("obi cat -c ",
-                    file, "_ODIN/sample_name",
-                    " -c ", experiment, "_ODIN/version", c(i - 1),
-                    " ", experiment, "_ODIN/version", i, " ; ",
-                    "obi rm ", experiment, "_ODIN/version", c(i - 1)),
-             intern = TRUE, wait = TRUE)
-    }
-  }
-}
-
-dereplicate_obidms <- function(experiment) {
-  system(paste0("obi uniq --merge 'sample' ",
-                experiment, "_ODIN/samples ",
-                experiment, "_ODIN/samples_uniq"),
-         intern = TRUE, wait = TRUE)
-}
-
-annotate_obidms <- function(experiment) {
-  system(paste0("obi annotate --seq-rank ",
-                experiment, "_ODIN/samples_uniq ",
-                experiment, "_ODIN/seq_rank"),
-         intern = TRUE, wait = TRUE)
-  system(paste0("obi annotate --set-identifier ",
-                "\'\"\'", experiment, "\'_%09d\" % sequence[\"seq_rank\"]\' ",
-                experiment, "_ODIN/seq_rank ",
-                experiment, "_ODIN/seq_id"),
-         intern = TRUE, wait = TRUE)
-}
 
 ############################################
 # new part
@@ -952,13 +855,13 @@ rename_sequences <- function(experiment) {
   rename_fasta(input_file, output_file, experiment)
 }
 table_creation <- function(experiment, filetab){
+  fasta_file <- paste0(experiment, "_ODIN_derep_seqs_renamed.fasta")
   system(paste0("vsearch ",
-                "--search_exact ", experiment, "_ODIN_samples_joined.fasta ",
-                "--db ", experiment, "_ODIN_derep_seqs_renamed.fasta ",
-                "--otutab ", filetab),
+                " --search_exact ", experiment, "_ODIN_samples_joined.fasta ",
+                " --db ", fasta_file,
+                " --otutab ", filetab),
         intern = TRUE, wait = TRUE)
   # Example usage of the C++ function
-  fasta_file <- paste0(experiment, "_ODIN_derep_seqs_renamed.fasta")
   seq2tab(filetab, fasta_file, "ID")
 }
 

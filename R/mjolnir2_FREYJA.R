@@ -71,7 +71,7 @@
 mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320,
                             min_overlap = 40,
                             maxdiff = 0,
-                            error_rate = 0.05,
+                            error_rate = 0.5,
                             R1_motif = "_R1", R2_motif = "_R2",
                             commands_file = "commands_runned_FREYJA.txt",
                             only_commands = FALSE,
@@ -161,11 +161,13 @@ mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320
           " --fastq_minmergelen ", Lmin,
           " --fastq_maxmergelen ", Lmax,
           " --fastq_maxns 0 ",
+          " --threads ", cores,
           " ", additional_params_alignment, " ",
           " ; ",
           " vsearch ",
           " --fastx_uniques ", experiment, "_", agnomens[i], "_FREYJA_aligned.fastq",
           " --sizeout ",
+          " --threads ", cores,
           " --fastaout ", experiment, "_", agnomens[i], "_FREYJA_uniq.fasta"
         )
       )

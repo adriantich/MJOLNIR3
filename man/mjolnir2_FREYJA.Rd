@@ -11,7 +11,7 @@ mjolnir2_FREYJA(
   Lmax = 320,
   min_overlap = 40,
   maxdiff = 0,
-  error_rate = 0.05,
+  error_rate = 0.5,
   R1_motif = "_R1",
   R2_motif = "_R2",
   commands_file = "commands_runned_FREYJA.txt",
