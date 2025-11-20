@@ -839,8 +839,12 @@ dereplicate_vsearch <- function(experiment){
         intern = TRUE, wait = TRUE)
 }
 
-Rcpp::sourceCpp(system.file("src/rename_fasta.cpp", package = "mjolnir"))
-Rcpp::sourceCpp(system.file("src/seq2tab.cpp", package = "mjolnir"))
+# this lines must be run once to compile the C++ 
+#   code if not done with install.packages
+# Rcpp::sourceCpp(system.file("src/rename_fasta.cpp", 
+#                             package = "mjolnir"))
+# Rcpp::sourceCpp(system.file("src/seq2tab.cpp",
+#                             package = "mjolnir"))
 
 rename_fasta <- function(input_file, output_file, experiment) {
   .Call('_mjolnir_rename_fasta', PACKAGE = 'mjolnir', input_file, output_file, experiment)
