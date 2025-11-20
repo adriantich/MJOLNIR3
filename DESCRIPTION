@@ -13,7 +13,7 @@ Description: MJOLNIR Metabarcoding Joining Obitools & Linkage Networks In R
     - Taxonomic assignment with ecotag
     - Pseudogene removal with LULU.
 License: GPL-3
-Depends: parallel,Biostrings
+Depends: parallel,Biostrings,dplyr,tidyr,stringr
 Imports: Rcpp
 LinkingTo: Rcpp
 Encoding: UTF-8
