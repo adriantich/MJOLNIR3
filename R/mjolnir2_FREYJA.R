@@ -204,11 +204,9 @@ mjolnir2_FREYJA <- function(experiment = NULL, cores = 1, Lmin = 299, Lmax = 320
   },mc.cores = cores)
 
   variables_FREYJA <- data.frame(variable = c("cores", "Lmin",
-                                              "Lmax", "experiment",
-                                              "score_obialign"),
+                                              "Lmax", "experiment"),
                                  value = c(cores, Lmin,
-                                           Lmax, experiment,
-                                           score_obialign))
+                                           Lmax, experiment))
 
   save(file = "summary_FREYJA.RData",
        list = c("before_FREYJA", "after_FREYJA", "variables_FREYJA"))

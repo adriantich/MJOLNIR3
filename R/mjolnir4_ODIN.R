@@ -331,8 +331,8 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   run_entropy <- !is.logical(entropy)
   
   # checkpoint
-  report_ODIN <- paste("ODIN was used to obtain meaningful units. In your",
-                       "case you chose the ", algorithm, " algorithm.\n")
+  # report_ODIN <- paste("ODIN was used to obtain meaningful units. In your",
+  #                      "case you chose the ", algorithm, " algorithm.\n")
   
   #####
   # 1: D and DS -> denoise the fasta files
@@ -721,8 +721,8 @@ min_rel_correction <- function(seqs_abund, min_relative){
     sample_cols <- grep("_sample_", names(seqs_abund))
     message("ODIN will remove sequences with relative abundances below ", 
             min_relative)
-    num_seqs <- colSums(seqs_abund[,sample_cols]>0)
-    reads_seqs <- colSums(seqs_abund[,sample_cols])
+    # num_seqs <- colSums(seqs_abund[,sample_cols]>0)
+    # reads_seqs <- colSums(seqs_abund[,sample_cols])
     
     change_matrix <- apply(seqs_abund[,sample_cols], 2,
                            relabund, min_relative = min_relative)
@@ -846,12 +846,12 @@ dereplicate_vsearch <- function(experiment){
 # Rcpp::sourceCpp(system.file("src/seq2tab.cpp",
 #                             package = "mjolnir"))
 
-rename_fasta <- function(input_file, output_file, experiment) {
-  .Call('_mjolnir_rename_fasta', PACKAGE = 'mjolnir', input_file, output_file, experiment)
-}
-seq2tab <- function(input_table_file, fasta_file, id_column) {
-  .Call('_mjolnir_seq2tab', PACKAGE = 'mjolnir', input_table_file, fasta_file, id_column)
-}
+# rename_fasta <- function(input_file, output_file, experiment) {
+#   .Call('_mjolnir_rename_fasta', PACKAGE = 'mjolnir', input_file, output_file, experiment)
+# }
+# seq2tab <- function(input_table_file, fasta_file, id_column) {
+#   .Call('_mjolnir_seq2tab', PACKAGE = 'mjolnir', input_table_file, fasta_file, id_column)
+# }
 
 rename_sequences <- function(experiment) {
   input_file <- paste0(experiment, "_ODIN_derep_seqs.fasta")
