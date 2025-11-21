@@ -424,6 +424,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
 
   seqs_abund <- read.csv(filetab, sep = "\t", head = TRUE)
   names(seqs_abund) <- gsub("MERGED_sample.", "", names(seqs_abund))
+  names(seqs_abund)[names(seqs_abund)=="X.OTU.ID"] <- "ID"
   if(metadata_table == '') {
     metadata_table <- paste0(experiment, "_metadata.tsv")
   }
@@ -478,10 +479,10 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
   if(algorithm == "dnoise" || (algorithm == "dnoise_swarm" && run_dnoise)) {
     for (sample in names(seqs_abund)[sample_cols]) {
       df_fasta <- seqs_abund[seqs_abund[, sample] > 0,
-                             c("ID", sample, "NUC_SEQ")]
+                             c("ID", sample, "sequence")]
       id_fasta <- paste(">", df_fasta$ID, ";size=", df_fasta[, sample],
                         sep = "")
-      fasta_to_print <- paste(id_fasta, df_fasta$NUC_SEQ, sep = "\n")
+      fasta_to_print <- paste(id_fasta, df_fasta$sequence, sep = "\n")
       original_name <- metadata$original_samples[metadata$mjolnir_agnomens ==
                                                    sample]
       writeLines(paste0(fasta_to_print,
@@ -493,15 +494,15 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
     # 7: D -> create fasta files for taxonomic assignment
     #####
     if(algorithm == "dnoise") {
-      seqs_abund <- seqs_abund[, c("ID", "NUC_SEQ")]
-      seqs_abund <- paste(paste0(">", seqs_abund$ID), seqs_abund$NUC_SEQ, sep = "\n")
+      seqs_abund <- seqs_abund[, c("ID", "sequence")]
+      seqs_abund <- paste(paste0(">", seqs_abund$ID), seqs_abund$sequence, sep = "\n")
       writeLines(paste0(seqs_abund, collapse = "\n"), paste0(outfile, ".fasta"))
     }
     rm(seqs_abund)
   } else {
      seqs_abund$total_count <- rowSums(seqs_abund[, sample_cols])
      seqs_abund <- paste(paste0(">", seqs_abund$ID,";size=",seqs_abund$total_count),
-                              seqs_abund$NUC_SEQ, sep = "\n")
+                              seqs_abund$sequence, sep = "\n")
       writeLines(paste0(seqs_abund, collapse = "\n"), paste0(outfile, ".fasta"))
       rm(seqs_abund)
   }
@@ -623,8 +624,8 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
                 sep = "\t", quote = FALSE, row.names = FALSE)
     
     # 9: DS,SD,S,SaD -> Also create fasta files for taxonomic assignment
-    db_total <- db_total[, c("ID", "NUC_SEQ")]
-    db_total <- paste(paste0(">", db_total$ID), db_total$NUC_SEQ, sep = "\n")
+    db_total <- db_total[, c("ID", "sequence")]
+    db_total <- paste(paste0(">", db_total$ID), db_total$sequence, sep = "\n")
     writeLines(paste0(db_total, collapse = "\n"), paste0(outfile, ".fasta"))
     
   }
@@ -650,7 +651,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
       system(paste0(dnoise, " --csv_input ", outfile_preDnoisE, " ",
                     "--csv_output ", outfile_ESV, " ",
                     "-a ", alpha, " -c ", cores, 
-                    " -n 'COUNT' -p 1 -q 'NUC_SEQ' ",
+                    " -n 'COUNT' -p 1 -q 'sequence' ",
                     "-s ", s_opt, " -z ", z_opt, " ",
                     entropy, " -w 'MOTU' ; ",
                     "mv ", outfile_ESV, "_Adcorr_denoised_ratio_d.csv ",
@@ -663,7 +664,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
       system(paste0(dnoise," --csv_input ", outfile_preDnoisE, " ",
                     "--csv_output ", outfile_ESV, " ",
                     "-a ", alpha, " -c ", cores,
-                    " -n 'COUNT' -p 1 -q 'NUC_SEQ' ",
+                    " -n 'COUNT' -p 1 -q 'sequence' ",
                     "-s ", s_opt, " -z ", z_opt, " ",
                     "-w 'MOTU' ; ",
                     "mv ", outfile_ESV, "_denoised_ratio_d.csv ",
