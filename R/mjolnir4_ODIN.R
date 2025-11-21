@@ -489,15 +489,14 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
                         collapse = "\n"),
                  paste0(sample, "_ODIN_ESV_", original_name, ".fasta"))
     }
-    
+  }
     #####
     # 7: D -> create fasta files for taxonomic assignment
     #####
-    if(algorithm == "dnoise") {
-      seqs_abund <- seqs_abund[, c("ID", "sequence")]
-      seqs_abund <- paste(paste0(">", seqs_abund$ID), seqs_abund$sequence, sep = "\n")
-      writeLines(paste0(seqs_abund, collapse = "\n"), paste0(outfile, ".fasta"))
-    }
+  if(algorithm == "dnoise") {
+    seqs_abund <- seqs_abund[, c("ID", "sequence")]
+    seqs_abund <- paste(paste0(">", seqs_abund$ID), seqs_abund$sequence, sep = "\n")
+    writeLines(paste0(seqs_abund, collapse = "\n"), paste0(outfile, ".fasta"))
     rm(seqs_abund)
   } else {
      seqs_abund$total_count <- rowSums(seqs_abund[, sample_cols])
@@ -565,7 +564,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
     db_total <- do.call(rbind, db_total)
     db_total <- cbind(data.frame(ID = rownames(db_total)), db_total)
     db_total <- merge(db_total, db[, grepl("ID|sequence", names(db))], by = "ID")
-    
+    db$COUNT <- rowSums(db[, grepl("sample", names(db))])
     # order the columns
     col_order <- c("ID", "COUNT", "MOTU", names(db)[grepl("sample", names(db))],
                    "sequence")
@@ -679,7 +678,7 @@ mjolnir4_ODIN <- function(experiment = NULL, cores = 1, d = 13,
     message("")
   }
   
-  save(file = "summary_ODIN.RData",list = c(c("alpha","min_reads_MOTU","min_reads_ESV","algorithm","run_entropy","entropy","after_2_ODIN"),
+  save(file = "summary_ODIN.RData",list = c(c("alpha","min_reads_MOTU","min_reads_ESV","algorithm","run_entropy","entropy"),
                                             c("before_1_ODIN")[exists("before_1_ODIN")],c("after_4a_ODIN")[exists("after_4a_ODIN")]))
 
   message("ODIN is done.")
