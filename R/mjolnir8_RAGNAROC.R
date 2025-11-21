@@ -176,20 +176,29 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
   # Remove bacteria
   if (remove_bacteria) {
     message("RAGNAROC is removing bacterial MOTUs now.")
-    bacteria_removed <- sum(c(db$superkingdom_name == "Prokaryota" | db$SCIENTIFIC_NAME == "root"),na.rm = T)
-    db <- db[(!grepl('Prokaryota',db$superkingdom_name) & !grepl('Prokaryota',db$superkingdom_name)),]
+    # bacteria_removed <- sum(c(db$superkingdom_name == "Prokaryota" | db$SCIENTIFIC_NAME == "root"),na.rm = T)
+    # db <- db[(!grepl('Prokaryota',db$superkingdom_name) & !grepl('Prokaryota',db$superkingdom_name)),]
+    bacteria_removed <- sum(c(db$domain == "Bacteria" | db$domain == ""),na.rm = T)
+    db <- db[(!grepl('Bacteria',db$domain) & !(db$domain == "")),]
   }
 
   # Remove contamination
   if (remove_contamination){
     message("RAGNAROC is removing contaminant MOTUs now.")
     contamination <- readLines(contamination_file)
-    db <- db[!((db$SCIENTIFIC_NAME %in% contamination) |
-                         (db$phylum_name %in% contamination) |
-                         (db$class_name %in% contamination) |
-                         (db$order_name %in% contamination) |
-                         (db$family_name %in% contamination) |
-                         (db$genus_name %in% contamination)) ,]
+    # db <- db[!((db$SCIENTIFIC_NAME %in% contamination) |
+    #                      (db$phylum_name %in% contamination) |
+    #                      (db$class_name %in% contamination) |
+    #                      (db$order_name %in% contamination) |
+    #                      (db$family_name %in% contamination) |
+    #                      (db$genus_name %in% contamination)) ,]
+    db <- db[!((db$ltg_name %in% contamination) |
+               (db$kingdom %in% contamination) |
+               (db$phylum %in% contamination) |
+               (db$class %in% contamination) |
+               (db$order %in% contamination) |
+               (db$family %in% contamination) |
+               (db$genus %in% contamination)) ,]
   }
 
   # Load the metadata_table
@@ -241,7 +250,7 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
     message("RAGNAROC is removing MOTUs with less than ",min_reads," total reads.")
     db <- db[db$COUNT >= min_reads,]
   } else {
-    rownames(ESV_data_initial) <- ESV_data_initial$ID
+    rownames(ESV_data_initial) <- ESV_data_initial$id
 
     ESV_data_initial$COUNT <- rowSums(ESV_data_initial[,sample_cols_ESV])
 
@@ -252,25 +261,26 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
     if (remove_numts) {
       message("numts will be removed")
       # no_ESV_before_numts <- dim(ESV_data_initial)[1]
-      lengths <- nchar(as.vector(ESV_data_initial$NUC_SEQ))
+      lengths <- nchar(as.vector(ESV_data_initial$sequence))
       ESV_data_initial <- ESV_data_initial[(lengths-313)%%3 == 0,]
-      lengths <- nchar(as.vector(ESV_data_initial$NUC_SEQ))
+      lengths <- nchar(as.vector(ESV_data_initial$sequence))
 
       # no_numts_data <- c()
       # numts_seqs <- c()
   
       number_of_motus <- length(unique(ESV_data_initial$MOTU))
-      motu_taxa <- data.frame("id" = db$id, "Metazoa" = c(db$kingdom_name == "Metazoa" & !is.na(db$kingdom_name)))
+      # motu_taxa <- data.frame("id" = db$id, "Metazoa" = c(db$kingdom_name == "Metazoa" & !is.na(db$kingdom_name)))
+      motu_taxa <- data.frame("id" = db$id, "Metazoa" = c(db$kingdom == "Metazoa" & !is.na(db$kingdom)))
       numts_ESV <- parallel::mclapply(1:number_of_motus,function(i,ESV_data_initial,motu_taxa){
         motu <- unique(ESV_data_initial$MOTU)[i]
         datas <- ESV_data_initial[ESV_data_initial$MOTU==motu,]
         is_metazoa <- motu_taxa$Metazoa[motu_taxa$id==as.character(motu)]
-        datas_length <- nchar(as.vector(datas$NUC_SEQ))
+        datas_length <- nchar(as.vector(datas$sequence))
         newlist <- numts(datas, is_metazoa = is_metazoa, motu = motu, datas_length = datas_length)
         return(newlist)
       },ESV_data_initial=ESV_data_initial,motu_taxa=motu_taxa,mc.cores = cores)
       numts_ESV <- do.call("rbind",numts_ESV)
-      ESV_data_initial <- ESV_data_initial[!ESV_data_initial$ID %in% numts_ESV$id,]
+      ESV_data_initial <- ESV_data_initial[!ESV_data_initial$id %in% numts_ESV$id,]
       message("numts removed")
     }
     db <- db[db$id %in% unique(ESV_data_initial$MOTU),]
@@ -284,6 +294,7 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
       }
     },ESV_data_initial=ESV_data_initial,sample_cols_ESV=sample_cols_ESV,mc.cores = cores)
     db[,sample_cols] <- do.call("rbind",motu_abund)
+    db$COUNT <- rowSums(db[,sample_cols])
   }
 
   # Write final table
@@ -291,7 +302,7 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
   if (ESV_within_MOTU){
     write.table(ESV_data_initial,output_file_ESV,row.names = F,sep="\t",quote = F)
   }
-  message("After RAGNAROC, MJOLNIR is done. File: ",output_file, " written with ",nrow(db), " MOTUs and ",sum(db$total_reads)," total reads.")
+  message("After RAGNAROC, MJOLNIR is done. File: ",output_file, " written with ",nrow(db), " MOTUs and ",sum(db$COUNT)," total reads.")
   
   #####
   # RAGNAROC REPORT
@@ -411,21 +422,21 @@ numts<-function(datas, is_metazoa=FALSE, motu, datas_length) {
   mitochondrial_GC <- c(2,3,4,5,7,11,12,14,15,16,17,18)
   # START
   motu_name = motu
-  datas$NUC_SEQ<-as.character(datas$NUC_SEQ)
+  datas$sequence<-as.character(datas$sequence)
 
   # remove sequences with different length than the seed
-  if (sum(datas$ID==motu)==0) { # if the seed has been deleted in previous steps take the first more abundant
-    motu = datas$ID[which(datas$COUNT==max(datas$COUNT,na.rm = TRUE))[1]]
+  if (sum(datas$id==motu)==0) { # if the seed has been deleted in previous steps take the first more abundant
+    motu = datas$id[which(datas$COUNT==max(datas$COUNT,na.rm = TRUE))[1]]
   }
-  correct_length <- datas_length[datas$ID==motu]
+  correct_length <- datas_length[datas$id==motu]
   datas <- datas[datas_length==correct_length,]
 
   # remove misaligned sequences (more than 30 differences between a sequence and
   # the seed)
   misaligned_seqs <- c()
-  motu_seq <- DNAString(datas$NUC_SEQ[datas$ID == motu])
+  motu_seq <- DNAString(datas$sequence[datas$id == motu])
   for (i in 1:dim(datas)[1]) {
-    if(sum(!compare.DNA(motu_seq,DNAString(datas$NUC_SEQ[i])))>=30){
+    if(sum(!compare.DNA(motu_seq,DNAString(datas$sequence[i])))>=30){
       misaligned_seqs <- c(misaligned_seqs,i)
     }
   }
@@ -437,8 +448,8 @@ numts<-function(datas, is_metazoa=FALSE, motu, datas_length) {
   # the number of codons stop is multiplied by the number of count of the sequence.
   stops<-matrix(NA,dim(datas)[1],20)
   aa_xung<-matrix(NA,dim(datas)[1],20)
-  seq<-DNAStringSet(datas$NUC_SEQ)
-  seq<-DNAStringSet(seq,start=2,end=nchar(datas$NUC_SEQ[1]))
+  seq<-DNAStringSet(datas$sequence)
+  seq<-DNAStringSet(seq,start=2,end=nchar(datas$sequence[1]))
 
   for (qq in mitochondrial_GC){
     code<-getGeneticCode(as.character(GENETIC_CODE_TABLE$id[qq]))
@@ -494,7 +505,7 @@ numts<-function(datas, is_metazoa=FALSE, motu, datas_length) {
 
   # numts
   if (sum(flag)>0) {
-    numts_seqs <- data.frame("motu" = motu_name, "id" = datas$ID[flag],
+    numts_seqs <- data.frame("motu" = motu_name, "id" = datas$id[flag],
                              "genetic_code" = bestcodename,
                              "similar_codes" = paste(goodcodesnames, collapse = " | "))
   } else {
