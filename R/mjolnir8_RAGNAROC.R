@@ -226,8 +226,8 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
 
   db <- db[,!grepl("EMPTY",colnames(db))]
 
-  sample_names <- sample_names[!grepl("EMPTY",sample_names)]
-  sample_cols <- match(sample_names,colnames(db))
+  sample_names <- sample_names[!grepl("EMPTY",new_sample_names)]
+  sample_cols <- match(new_sample_names,colnames(db))
   sample_cols <- sample_cols[!is.na(sample_cols)]
   
   # same for ESVs
