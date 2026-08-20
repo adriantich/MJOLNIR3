@@ -1,5 +1,6 @@
-#include <Rcpp.h>
-#include "seq2tab_core.h"
+#pragma once
+
+#include <string>
 
 /*
 In order to be able to create a standalone binary, the seq2tab.cpp in now 
@@ -10,11 +11,7 @@ The wrapper for R is in src/ too: seq2tab.cpp
 The wrapper for the CLI is in tools/: seq2tab_cli.cpp
 */ 
 
-using namespace Rcpp;
 
-// [[Rcpp::export]]
-void seq2tab(std::string input_table_file,
-             std::string fasta_file,
-             std::string id_column) {
-  seq2tab_core(input_table_file, fasta_file, id_column);
-}
+void seq2tab_core(const std::string& input_table_file,
+                  const std::string& fasta_file,
+                  const std::string& id_column);
