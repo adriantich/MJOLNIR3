@@ -1,7 +1,3 @@
-
-if (!require("optparse", quietly = TRUE)) {
-  install.packages("optparse")
-}
 library(optparse)
 
 opts <- list(
@@ -18,6 +14,9 @@ opts <- list(
 )
 opt <- parse_args(OptionParser(option_list = opts))
 
+# fileswarm="swarm_output.txt"
+# filetab="seq_table.tsv"
+# cores=1
 
 SWARM2tab <- function(fileswarm, filetab, cores = 1) {
     # Check if the input files exist
@@ -35,12 +34,13 @@ SWARM2tab <- function(fileswarm, filetab, cores = 1) {
     total_swarms <- length(swarm_db)
     message("2/7. Read ", total_swarms," total MOTUs.")
     
+    swarm_db <- gsub("size=[0-9]+\\s*","",swarm_db)  # remove leading numbers
     
-    clusters <- strsplit(swarm_db, "; ")
+    clusters <- strsplit(swarm_db, ";")
     message("4/7. Keeping only information of the sequences ",
             "that form each cluster.")
-    clusters <- mclapply(clusters,function(x) {sub(";.*", "", x)},
-                         mc.cores = cores)
+    # clusters <- mclapply(clusters,function(x) {sub(";.*", "", x)},
+    #                      mc.cores = cores)
     names(clusters) <- mclapply(clusters, function(x) x[[1]], mc.cores = cores)
     
     # Read counts database and keep only the needed clusters
@@ -48,25 +48,25 @@ SWARM2tab <- function(fileswarm, filetab, cores = 1) {
             "This could take a while.")
     motu_seqs_names <- stack(clusters) %>% rename(ID = values, MOTU = ind)
     
-    # db <- read.table(filetab, sep = "\t", head = TRUE)
-    db <- read.delim(filetab, header=TRUE, sep="\t",
+    # db_ESV <- read.table(filetab, sep = "\t", head = TRUE)
+    db_ESV <- read.delim(filetab, header=TRUE, sep="\t",
                     comment.char="", check.names=FALSE,
                     stringsAsFactors=FALSE)
-    names(db) <- sub("^#OTU ","", names(db))     # remove leading '#'
-    numseqs <- nrow(db)
-    samples <- names(db)[!names(db)%in%c("ID","sequence")]
-    db <- merge(motu_seqs_names, db, by = "ID")
-    numseqs_reduced <- nrow(db)
-    samples <- length(samples)
+    names(db_ESV) <- sub("^#OTU ","", names(db_ESV))     # remove leading '#'
+    numseqs <- nrow(db_ESV)
+    samples <- names(db_ESV)[!names(db_ESV)%in%c("ID","sequence")]
+    db_ESV <- merge(motu_seqs_names, db_ESV, by = "ID")
+    numseqs_reduced <- nrow(db_ESV)
+    num_samples <- length(samples)
     message("Finished reading the Database, which includes ", 
-            numseqs, " total unique sequences and ", samples, " samples.\n",
+            numseqs, " total unique sequences and ", num_samples, " samples.\n",
             "Kept only ", numseqs_reduced, " sequences for calculations.")
     
     message("7/7. Calculating the number of reads in every sample ",
             "for each MOTU.")
-    db_total <- split(db[, names(db) %in% samples], db$MOTU)
-    db_total <- mclapply(
-        db_total, 
+    db_MOTU <- split(db_ESV[, names(db_ESV) %in% samples], db_ESV$MOTU)
+    db_MOTU <- mclapply(
+        db_MOTU, 
         function(x) {
             as.data.frame(
                 t(
@@ -77,23 +77,23 @@ SWARM2tab <- function(fileswarm, filetab, cores = 1) {
                             CLUST_WEIGHT = dim(x)[1]
                         ))))},
         mc.cores = cores)
-    db_total <- do.call(rbind, db_total)
-    db_total <- cbind(data.frame(ID = rownames(db_total)), db_total)
-    db_total <- merge(db_total, db[, grepl("ID|sequence", names(db))], by = "ID")
-    db$COUNT <- rowSums(db[, names(db) %in% samples])
+    db_MOTU <- do.call(rbind, db_MOTU)
+    db_MOTU <- cbind(data.frame(ID = rownames(db_MOTU)), db_MOTU)
+    db_MOTU <- merge(db_MOTU, db_ESV[, grepl("ID|sequence", names(db_ESV)), drop = FALSE], by = "ID")
+    db_ESV$COUNT <- rowSums(db_ESV[, names(db_ESV) %in% samples])
     # order the columns
-    col_order <- c("ID", "COUNT", "MOTU", samples,
-                   "sequence")
-    db <- db[, col_order]
+    col_order <- c("ID", "COUNT", "MOTU", samples)
+    db_ESV <- db_ESV[, col_order]
+    db_MOTU <- db_MOTU[order(db_MOTU$COUNT, decreasing = TRUE), ]
     message("Finished calculating the number of reads in every sample for each MOTU.")
-    return(list(db = db, db_total = db_total))
+    return(list(db_ESV = db_ESV, db_MOTU = db_MOTU))
 }
 
 
 result <- SWARM2tab(fileswarm = opt$swarm, filetab = opt$tab, cores = opt$cores)
 if (!is.null(opt$output_ESV)) {
-  write.table(result$db_total, file = opt$output_ESV, sep = "\t", row.names = FALSE, quote = FALSE)
+  write.table(result$db_ESV, file = opt$output_ESV, sep = "\t", row.names = FALSE, quote = FALSE)
 }
 if (!is.null(opt$output_MOTU)) {
-  write.table(result$db, file = opt$output_MOTU, sep = "\t", row.names = FALSE, quote = FALSE)
+  write.table(result$db_MOTU, file = opt$output_MOTU, sep = "\t", row.names = FALSE, quote = FALSE)
 }
