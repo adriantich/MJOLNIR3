@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MJOLNIR3 Tutorial</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="hero">
+
+    <div class="hero-overlay">
+
+        <h1>⚡ MJOLNIR3 ⚡</h1>
+
+        <p class="tagline">
+            A Nordic-inspired metabarcoding pipeline forged in Asgard
+        </p>
+
+    </div>
+
+</header>
+
+<main class="container">
+
+    <section class="description">
+
+        <h2>What is MJOLNIR3?</h2>
+
+        <p>
+            MJOLNIR3 is a powerful tool designed to crush large amounts
+            of raw metabarcoding data and forge them into organized
+            datasets of taxonomically assigned MOTUs.
+        </p>
+
+        <p>
+            Distributed as an R package, MJOLNIR3 enables modular
+            metabarcoding workflows to be executed directly from R while
+            maintaining reproducibility and flexibility.
+        </p>
+
+        <p>
+            MJOLNIR3 is primarily designed for Linux and macOS systems.
+            While installation through WSL may be possible, native
+            Windows installations are not recommended.
+        </p>
+
+    </section>
+
+    <section class="pipeline-step">
+
+        <div class="step-header">
+
+            <div>
+                <h2>⚡ Step 1 - Prepare Input Data</h2>
+
+                <p>
+                    Define the raw FASTQ files and project settings.
+                </p>
+            </div>
+
+            <button
+                id="toggle-help"
+                class="help-btn">
+                Open Help
+            </button>
+
+        </div>
+
+        <div id="help-section" class="help-section">
+
+            <h3>About this step</h3>
+
+            <p>
+                In this step MJOLNIR3 validates and prepares the raw
+                sequencing files before entering the downstream workflow.
+            </p>
+
+            <p>
+                Select your FASTQ files and configure the main project
+                settings. These options will later be used to generate
+                the MJOLNIR3 configuration file.
+            </p>
+
+            <img
+                src="images/step1.gif"
+                alt="Step 1 tutorial">
+
+        </div>
+
+        <div class="parameters">
+
+            <h3>Pipeline Settings</h3>
+
+            <form id="config-form">
+
+                <div class="form-group">
+                    <label for="projectName">
+                        Project Name
+                    </label>
+
+                    <input
+                        id="projectName"
+                        type="text"
+                        value="MyProject">
+                </div>
+
+                <div class="form-group">
+                    <label for="forwardReads">
+                        Forward Reads
+                    </label>
+
+                    <input
+                        id="forwardReads"
+                        type="text"
+                        placeholder="sample_R1.fastq.gz">
+                </div>
+
+                <div class="form-group">
+                    <label for="reverseReads">
+                        Reverse Reads
+                    </label>
+
+                    <input
+                        id="reverseReads"
+                        type="text"
+                        placeholder="sample_R2.fastq.gz">
+                </div>
+
+                <div class="form-group">
+                    <label for="threads">
+                        Threads
+                    </label>
+
+                    <input
+                        id="threads"
+                        type="number"
+                        value="8">
+                </div>
+
+                <div class="form-group">
+                    <label for="quality">
+                        Quality Filtering
+                    </label>
+
+                    <select id="quality">
+                        <option>strict</option>
+                        <option selected>moderate</option>
+                        <option>relaxed</option>
+                    </select>
+                </div>
+
+                <button
+                    type="button"
+                    id="download-config"
+                    class="download-btn">
+
+                    Download Configuration
+                </button>
+
+            </form>
+
+        </div>
+
+    </section>
+
+</main>
+
+<footer>
+
+    Forged under the Bifröst ⚡
+
+</footer>
+
+<script src="js/app.js"></script>
+<script src="js/config-builder.js"></script>
+
+</body>
+</html>
