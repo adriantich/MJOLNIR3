@@ -54,7 +54,235 @@
         <div class="step-header">
 
             <div>
-                <h2>⚡ Step 1 - Prepare Input Data</h2>
+                <h2>⚡ Step 0 - Prepare Input Data</h2>
+
+                <p>
+                    Get the Input files ready and define the project settings.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="parameters">
+
+            <h3>Pipeline Settings</h3>
+
+            <form id="config-form">
+
+                <div class="form-group">
+
+                    <div
+                        class="parameter-header"
+                        style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+
+                        <label for="projectName" style="margin:0;">
+                            Project Name (4 digits)
+                        </label>
+                        <button
+                            type="button"
+                            class="help-btn"
+                            style="margin-left:auto; flex-shrink:0;">
+                            ?
+                        </button>
+
+                    </div>
+
+                    <input
+                        id="projectName"
+                        type="text"
+                        value="EXP1">
+
+                    <div class="help-section">
+
+                        <h4>Project Name</h4>
+
+                        <p>
+                            Unique identifier used throughout
+                            the MJOLNIR3 analysis. For simplification it is restricted to 4 digits.
+                        </p>
+
+                        <!-- <img
+                            src="images/cutadapt1.gif"
+                            alt="Project name tutorial"> -->
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+
+                    <div
+                        class="parameter-header"
+                        style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+
+                        <label for="metadataFile" style="margin:0;">
+                            Metadata File (tab separated)
+                        </label>
+                        <button
+                            type="button"
+                            class="help-btn"
+                            style="margin-left:auto; flex-shrink:0;">
+                            ?
+                        </button>
+
+                    </div>
+
+                    <input
+                        id="metadataFile"
+                        type="text"
+                        value="metadata.tsv">
+
+                    <div class="help-section">
+
+                        <h4>Metadata File</h4>
+
+                        <p>
+                            Provide the path to the metadata file containing sample information required for the MJOLNIR3 analysis.
+                        </p>
+
+                        <p>
+                            Columns required:
+                            <ul style="list-style-type:disc; margin-left:1.5rem;">
+                                <li><i>original_samples</i></li>
+                                <li><i>mjolnir_agnomens</i>  ({library identifier}_sample_{three digits number}, i.e. LIB1_sample_001)</li>
+                            </ul>
+                            If demultiplexed libraries, include an additional column:
+                            <ul style="list-style-type:disc; margin-left:1.5rem;">
+                                <li><i>fastq_name_R1</i></li>
+                            </ul>
+
+                        </p>
+
+                        <!-- <img
+                            src="images/cutadapt1.gif"
+                            alt="Project name tutorial"> -->
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+
+                    <div
+                        class="parameter-header"
+                        style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+
+                        <label for="ngsfilterFile" style="margin:0;">
+                            <i>ngsfilter</i> File(s)
+                        </label>
+                        <button
+                            type="button"
+                            class="help-btn"
+                            style="margin-left:auto; flex-shrink:0;">
+                            ?
+                        </button>
+
+                    </div>
+
+                    <input
+                        id="ngsfilterFile"
+                        type="text"
+                        value="ngsfilter_LIB1.tsv">
+
+                    <div class="help-section">
+
+                        <h4><i>ngsfilter</i> File</h4>
+
+                        <p>
+                            Provide the path to the <i>ngsfilter</i> file required for the MJOLNIR3 analysis.
+                            This is a tab separated file without a header row.
+                        </p>
+
+                        <p>
+                            One file for each library is required.
+                        </p>
+
+                        <p>
+                            Columns required:
+                            <ul style="list-style-type:disc; margin-left:1.5rem;">
+                                <li><i>library identifier (four characters)</i></li>
+                                <li><i>mjolnir_agnomens ({library identifier}_sample_{three digits number})</i></li>
+                                <li><i>sample tags</i></li>
+                                <li><i>forward primer</i></li>
+                                <li><i>reverse primer</i></li>
+                            </ul>
+                            Example:
+                            <table>
+                                <tr>
+                                    <th>#Lib</th>
+                                    <th>mjolnir_agnomens</th>
+                                    <th>Sample tags</th>
+                                    <th>Forward primer</th>
+                                    <th>Reverse primer</th>
+                                </tr>
+
+                                <tr>
+                                    <td>LIB1</td>
+                                    <td>LIB1_sample_001</td>
+                                    <td>ATCG:ATCG</td>
+                                    <td>GGWAC...</td>
+                                    <td>TANAC...</td>
+                                </tr>
+
+                                <tr>
+                                    <td>LIB1</td>
+                                    <td>LIB1_sample_002</td>
+                                    <td>TAGC:TAGC</td>
+                                    <td>GGWAC...</td>
+                                    <td>TANAC...</td>
+                                </tr>
+                            </table>
+
+                        </p>
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+
+                    <div
+                        class="parameter-header"
+                        style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+
+                        <label for="coresValue" style="margin:0;">
+                            Cores or threads to use for parallel processing
+                        </label>
+                        <button
+                            type="button"
+                            class="help-btn"
+                            style="margin-left:auto; flex-shrink:0;">
+                            ?
+                        </button>
+
+                    </div>
+
+                    <input
+                        id="coresValue"
+                        type="number"
+                        value=1>
+
+                    <div class="help-section">
+
+                        <h4>Cores or Threads</h4>
+
+                        <p>
+                            Specify the number of CPU cores or threads to use for parallel processing in the MJOLNIR3 analysis.
+                        </p>
+
+                    </div>
+                </div>
+
+
+            </form>
+
+        </div>
+
+    </section>
+
+    <section class="pipeline-step">
+
+        <div class="step-header">
+
+            <div>
+                <h2>⚡ Step 0 - Prepare Input Data</h2>
 
                 <p>
                     Define the raw FASTQ files and project settings.

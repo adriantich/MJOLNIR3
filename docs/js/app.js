@@ -1,23 +1,49 @@
-document.addEventListener("DOMContentLoaded", () => {
+// document.addEventListener("DOMContentLoaded", () => {
 
-    const helpButton =
-        document.getElementById("toggle-help");
+//     const buttons =
+//         document.querySelectorAll(".help-btn");
 
-    const helpSection =
-        document.getElementById("help-section");
+//     buttons.forEach(button => {
 
-    helpButton.addEventListener("click", () => {
+//         button.addEventListener("click", () => {
 
-        helpSection.classList.toggle("active");
+//             const targetId =
+//                 button.dataset.target;
 
-        if (helpSection.classList.contains("active")) {
+//             const helpPanel =
+//                 document.getElementById(targetId);
 
-            helpButton.textContent = "Close Help";
+//             helpPanel.classList.toggle("active");
 
-        } else {
+//             button.textContent =
+//                 helpPanel.classList.contains("active")
+//                 ? "Close Help"
+//                 : "Open Help";
 
-            helpButton.textContent = "Open Help";
-        }
+//         });
+
+//     });
+
+// });
+
+document
+    .querySelectorAll(".help-btn")
+    .forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            const formGroup =
+                button.closest(".form-group");
+
+            const helpSection =
+                formGroup.querySelector(
+                    ".help-section"
+                );
+
+            helpSection.classList.toggle(
+                "active"
+            );
+
+        });
+
     });
-
-});

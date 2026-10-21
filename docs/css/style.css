@@ -128,6 +128,23 @@ body {
 
 .help-btn {
 
+    width: 30px;
+    height: 30px;
+
+    border-radius: 50%;
+
+    border: none;
+
+    cursor: pointer;
+
+    background: var(--asgard-blue);
+
+    color: black;
+
+    font-weight: bold;
+}
+/* .help-btn {
+
     cursor: pointer;
 
     border: none;
@@ -140,7 +157,7 @@ body {
     border-radius: 10px;
 
     background: var(--asgard-blue);
-}
+} */
 
 .help-btn:hover {
 
@@ -247,4 +264,30 @@ footer {
     padding: 4rem 1rem;
 
     opacity: .8;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+th {
+    background-color: var(--asgard-blue);
+    color: black;
+    text-align: left;
+}
+
+th,
+td {
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+tr:nth-child(even) {
+    background-color: rgba(255,255,255,0.05);
+}
+
+tr:hover {
+    background-color: rgba(0,216,255,0.1);
 }
