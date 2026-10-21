@@ -178,27 +178,21 @@ mjolnir8_RAGNAROC <- function(experiment = NULL, metadata_table = "",
     message("RAGNAROC is removing bacterial MOTUs now.")
     # bacteria_removed <- sum(c(db$superkingdom_name == "Prokaryota" | db$SCIENTIFIC_NAME == "root"),na.rm = T)
     # db <- db[(!grepl('Prokaryota',db$superkingdom_name) & !grepl('Prokaryota',db$superkingdom_name)),]
-    bacteria_removed <- sum(c(db$domain == "Bacteria" | db$domain == ""),na.rm = T)
-    db <- db[(!grepl('Bacteria',db$domain) & !(db$domain == "")),]
+    bacteria_removed <- sum(c(db$superkingdom_name == "Bacteria" | db$superkingdom_name == ""),na.rm = T)
+    db <- db[(!grepl('Bacteria',db$superkingdom_name) & !(db$superkingdom_name == "")),]
   }
 
   # Remove contamination
   if (remove_contamination){
     message("RAGNAROC is removing contaminant MOTUs now.")
     contamination <- readLines(contamination_file)
-    # db <- db[!((db$SCIENTIFIC_NAME %in% contamination) |
-    #                      (db$phylum_name %in% contamination) |
-    #                      (db$class_name %in% contamination) |
-    #                      (db$order_name %in% contamination) |
-    #                      (db$family_name %in% contamination) |
-    #                      (db$genus_name %in% contamination)) ,]
-    db <- db[!((db$ltg_name %in% contamination) |
-               (db$kingdom %in% contamination) |
-               (db$phylum %in% contamination) |
-               (db$class %in% contamination) |
-               (db$order %in% contamination) |
-               (db$family %in% contamination) |
-               (db$genus %in% contamination)) ,]
+    db <- db[!((db$SCIENTIFIC_NAME %in% contamination) |
+               (db$kingdom_name %in% contamination) |
+               (db$phylum_name %in% contamination) |
+               (db$class_name %in% contamination) |
+               (db$order_name %in% contamination) |
+               (db$family_name %in% contamination) |
+               (db$genus_name %in% contamination)) ,]
   }
 
   # Load the metadata_table
