@@ -158,6 +158,40 @@
 
                     </div>
                 </div>
+                <div class="form-group">
+                    <label for="LibraryIdentifier">
+                        Library identifiers
+                    </label>
+
+                    <div id="LibraryIdentifiersContainer">
+                        <div style="display:flex; gap:8px; margin-bottom:6px;">
+                            <input
+                                id="LibraryIdentifier"
+                                class="LibraryIdentifier"
+                                type="text"
+                                value="LIB1">
+                            <button
+                                type="button"
+                                id="addLibraryIdentifier"
+                                aria-label="Add another Library identifier">+</button>
+                        </div>
+                    </div>
+
+                    <input
+                        type="hidden"
+                        id="LibraryIdentifiersSerialized"
+                        value='["LIB1"]'>
+
+                    <!-- <small>
+                        Saved as JSON array in <code>LibraryIdentifiersSerialized</code> (R: <code>jsonlite::fromJSON(...)</code>)
+                    </small> -->
+
+                    <small
+                        id="libraryIdentifierWarning"
+                        style="display:none; color:#b00020; margin-top:6px;">
+                        Library identifiers must have exactly 4 characters.
+                    </small>
+                </div>
 
                 <div class="form-group">
 
@@ -177,10 +211,17 @@
 
                     </div>
 
-                    <input
+                    <!-- <input
                         id="ngsfilterFile"
                         type="text"
-                        value="ngsfilter_LIB1.tsv">
+                        value="ngsfilter_LIB1.tsv"> -->
+                    <div
+                        id="ngsfilterFilesContainer"
+                        class="parameter-header"
+                        style="display:block; align-items:center; justify-content:space-between; gap:0.75rem;">
+                        <h5>ngsfile_LIB1.tsv</h5>
+                        <p>*Prepare one file for each library and rename them according to the library identifier.</p>
+                    </div>
 
                     <div class="help-section">
 
@@ -282,79 +323,125 @@
         <div class="step-header">
 
             <div>
-                <h2>⚡ Step 0 - Prepare Input Data</h2>
+                <h2>⚡ Step 1 - RAN: Demultiplexing and primer trimming</h2>
 
                 <p>
-                    Define the raw FASTQ files and project settings.
+                    The output of this step can be directly uploaded to ENA/SRA repositories.
                 </p>
             </div>
-
-            <button
-                id="toggle-help"
-                class="help-btn">
-                Open Help
-            </button>
-
-        </div>
-
-        <div id="help-section" class="help-section">
-
-            <h3>About this step</h3>
-
-            <p>
-                In this step MJOLNIR3 validates and prepares the raw
-                sequencing files before entering the downstream workflow.
-            </p>
-
-            <p>
-                Select your FASTQ files and configure the main project
-                settings. These options will later be used to generate
-                the MJOLNIR3 configuration file.
-            </p>
-
-            <img
-                src="images/step1.gif"
-                alt="Step 1 tutorial">
 
         </div>
 
         <div class="parameters">
+            <div class="form-group">
 
-            <h3>Pipeline Settings</h3>
+                <div
+                    class="parameter-header"
+                    style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+
+                    <button
+                        type="button"
+                        class="help-btn"
+                        style="margin-left:auto; flex-shrink:0;">
+                        ?
+                    </button>
+
+                </div>
+
+                <div class="help-section">
+
+                    <h4>RAN</h4>
+
+                    <p>
+                        In this step MJOLNIR3 validates and prepares the raw
+                        sequencing files before entering the downstream workflow. 
+                        Experiment with multiplexed libraries require demultiplexing for 
+                        pipeline processing but also to store the data in reprositories
+                        such as ENA or SRA. One of the most common software for demultiplexing and
+                        primmer trimming is "cutadapt", the core program in RAN.
+                    </p>
+
+                    <p>
+                        RAN performs a two step cutadapt process for demultiplexing and primer trimming.
+                    </p>
+
+                    <p>
+                        Step 1  identify sample tags from the R1 and R2 sequence reads and distributes the sequences
+                        into separate files based on the identified sample tags.
+                    </p>
+
+                    <img
+                        src="images/cutadapt1.gif"
+                        alt="Project name tutorial"
+                    >
+                    
+
+                    <p>
+                        Step 2 reorientate the sequences based on the primers and trims them accordingly.
+                    </p>
+
+                    <img
+                        src="images/cutadapt2.gif"
+                        alt="Project name tutorial"
+                    >
+                    
+
+                    <p>
+                        Step 3 finally complete the process concatenating the intermediate files into the final output.
+                    </p>
+
+                    <img
+                        src="images/cutadapt3.gif"
+                        alt="Project name tutorial"
+                    >
+                    
+                </div>
+            </div>
+
+            <h3>RAN Settings</h3>
+
 
             <form id="config-form">
 
                 <div class="form-group">
-                    <label for="projectName">
-                        Project Name
-                    </label>
+
+                    <div
+                        id="multilineLibrariesContainer"
+                        style="display:none; margin-bottom:8px;">
+                        <label
+                            for="multilineLibraries"
+                            style="display:flex; align-items:center; gap:8px; margin:0; font-weight:normal;">
+                            <input
+                                id="multilineLibraries"
+                                type="checkbox">
+                            multiline libraries
+                        </label>
+                    </div>
+
+                    <div id="r1FilesByLibraryContainer"></div>
 
                     <input
-                        id="projectName"
-                        type="text"
-                        value="MyProject">
+                        type="hidden"
+                        id="r1FilesSerialized"
+                        value='[]'>
+
+                    <small>
+                        Saved as JSON array in <code>r1FilesSerialized</code> (R: <code>jsonlite::fromJSON(...)</code>)
+                    </small>
                 </div>
 
                 <div class="form-group">
-                    <label for="forwardReads">
-                        Forward Reads
-                    </label>
+
+                    <div id="r2FilesByLibraryContainer"></div>
 
                     <input
-                        id="forwardReads"
-                        type="text"
-                        placeholder="sample_R1.fastq.gz">
-                </div>
+                        type="hidden"
+                        id="r2FilesSerialized"
+                        value='[]'>
 
-                <div class="form-group">
-                    <label for="reverseReads">
-                        Reverse Reads
-                    </label>
-
-                    <input
-                        id="reverseReads"
-                        type="text"
-                        placeholder="sample_R2.fastq.gz">
+                    <small>
+                        Saved as JSON array in <code>r2FilesSerialized</code> (R: <code>jsonlite::fromJSON(...)</code>)
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -401,6 +488,60 @@
     Forged under the Bifröst ⚡
 
 </footer>
+
+<!-- <script>
+    (function () {
+        const container = document.getElementById('r1FileNamesContainer');
+        const addBtn = document.getElementById('addR1FileName');
+        const serialized = document.getElementById('r1FileNamesSerialized');
+
+        function syncR1Values() {
+            const values = Array.from(container.querySelectorAll('.r1-file-name'))
+                .map(input => input.value.trim())
+                .filter(Boolean);
+            serialized.value = JSON.stringify(values);
+        }
+
+        function buildRow(value = '') {
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '8px';
+            row.style.marginBottom = '6px';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'r1-file-name';
+            input.placeholder = 'LIB2_R1.fastq.gz';
+            input.value = value;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.textContent = '−';
+            removeBtn.setAttribute('aria-label', 'Remove this R1 file name');
+            removeBtn.addEventListener('click', function () {
+                row.remove();
+                syncR1Values();
+            });
+
+            input.addEventListener('input', syncR1Values);
+
+            row.appendChild(input);
+            row.appendChild(removeBtn);
+            return row;
+        }
+
+        addBtn.addEventListener('click', function () {
+            container.appendChild(buildRow(''));
+            syncR1Values();
+        });
+
+        container.querySelectorAll('.r1-file-name').forEach(input => {
+            input.addEventListener('input', syncR1Values);
+        });
+
+        syncR1Values();
+    })();
+</script> -->
 
 <script src="js/app.js"></script>
 <script src="js/config-builder.js"></script>

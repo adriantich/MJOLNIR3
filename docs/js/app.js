@@ -47,3 +47,25 @@ document
         });
 
     });
+
+// document
+//     .querySelectorAll(".help-btn")
+//     .forEach(button => {
+
+//         button.addEventListener("click", () => {
+
+//             const stepHeader =
+//                 button.closest(".step-header");
+
+//             const helpSectionHeader =
+//                 stepHeader.querySelector(
+//                     ".help-section"
+//                 );
+
+//             helpSectionHeader.classList.toggle(
+//                 "active"
+//             );
+
+//         });
+
+//     });
